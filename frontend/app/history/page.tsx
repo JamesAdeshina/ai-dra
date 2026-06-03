@@ -1,3 +1,9 @@
+import { AppLayout } from "@/components/layout/app-layout";
+
 export default function HistoryPage() {
-  return <div>History</div>;
+  return (
+    <AppLayout>
+      <h1>History</h1>
+    </AppLayout>
+  );
 }

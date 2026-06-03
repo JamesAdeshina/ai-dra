@@ -1,3 +1,9 @@
+import { AppLayout } from "@/components/layout/app-layout";
+
 export default function ProgressPage() {
-  return <div>Progress</div>;
+  return (
+    <AppLayout>
+      <h1>Progress</h1>
+    </AppLayout>
+  );
 }
