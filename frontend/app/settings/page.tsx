@@ -1,9 +1,10 @@
 import { AppLayout } from "@/components/layout/app-layout";
+import { SettingsView } from "@/features/settings/components/settings-view";
 
 export default function SettingsPage() {
   return (
     <AppLayout>
-      <h1>Settings</h1>
+      <SettingsView hasData={true} />
     </AppLayout>
   );
 }

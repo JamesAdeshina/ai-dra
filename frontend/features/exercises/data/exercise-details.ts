@@ -1,5 +1,6 @@
 export const exerciseDetails = {
   "shoulder-flexion": {
+    slug: "shoulder-flexion",
     title: "Shoulder Flexion",
     category: "Upper Limb Exercise",
     description:
@@ -10,12 +11,16 @@ export const exerciseDetails = {
     difficulty: "Medium",
     type: "Upper Limb",
     instruction: "Lift your arm forward and up.",
-    illustration: "🙋",
+    startIllustration: "/illustrations/arm-down.png",
+    illustration: "/illustrations/shoulder-flexion.png",
+    demoVideo: "/video/Shoulder Flexion video.mp4",
+    demoFallbackIcon: "🙋",
+    demoText:
+      "This movement supports reaching for household items and everyday activities.",
     benefits: [
       "Improve shoulder mobility",
       "Improve reaching movements",
       "Support everyday activities",
-      "Build confidence using the affected arm",
     ],
     activities: [
       "Reaching for a cup",
@@ -33,6 +38,7 @@ export const exerciseDetails = {
   },
 
   "elbow-flexion": {
+    slug: "elbow-flexion",
     title: "Elbow Flexion",
     category: "Upper Limb Exercise",
     description:
@@ -43,12 +49,16 @@ export const exerciseDetails = {
     difficulty: "Medium",
     type: "Upper Limb",
     instruction: "Bend your elbow and bring your hand up.",
-    illustration: "💪",
+    startIllustration: "/illustrations/arm-down.png",
+    illustration: "/illustrations/elbow-flexion.png",
+    demoVideo: "",
+    demoFallbackIcon: "💪",
+    demoText:
+      "This movement improves arm control for eating, drinking and self-care activities.",
     benefits: [
       "Improve elbow movement",
       "Support self-care activities",
       "Increase arm strength",
-      "Enhance functional arm use",
     ],
     activities: [
       "Bringing a cup to your mouth",
@@ -66,6 +76,7 @@ export const exerciseDetails = {
   },
 
   "wrist-extension": {
+    slug: "wrist-extension",
     title: "Wrist Extension",
     category: "Upper Limb Exercise",
     description:
@@ -76,7 +87,12 @@ export const exerciseDetails = {
     difficulty: "Medium",
     type: "Hand & Wrist",
     instruction: "Lift your hand up towards the ceiling.",
-    illustration: "✋",
+    startIllustration: "/illustrations/arm-down.png",
+    illustration: "/illustrations/wrist-extension.png",
+    demoVideo: "",
+    demoFallbackIcon: "✋",
+    demoText:
+      "This movement supports gripping, carrying and handling everyday objects.",
     benefits: [
       "Improve wrist control",
       "Support gripping activities",
@@ -99,6 +115,7 @@ export const exerciseDetails = {
   },
 
   "cup-to-shelf": {
+    slug: "cup-to-shelf",
     title: "Cup to Shelf",
     category: "Functional Exercise",
     description:
@@ -110,12 +127,16 @@ export const exerciseDetails = {
     type: "Functional Task",
     instruction:
       "Place a cup on a shelf and return it safely to the starting position.",
-    illustration: "☕",
+    startIllustration: "/illustrations/arm-down.png",
+    illustration: "/illustrations/cup-to-shelf.png",
+    demoVideo: "",
+    demoFallbackIcon: "☕",
+    demoText:
+      "This movement improves reaching and object placement during household activities.",
     benefits: [
       "Improve reaching ability",
       "Develop coordination",
       "Practice object handling",
-      "Support independent living",
     ],
     activities: [
       "Putting away groceries",
@@ -133,6 +154,7 @@ export const exerciseDetails = {
   },
 
   "shoulder-abduction": {
+    slug: "shoulder-abduction",
     title: "Shoulder Abduction",
     category: "Upper Limb Exercise",
     description:
@@ -144,12 +166,16 @@ export const exerciseDetails = {
     type: "Upper Limb",
     instruction:
       "Raise your arm out to the side until it reaches shoulder height.",
-    illustration: "🧍",
+    startIllustration: "/illustrations/arm-down.png",
+    illustration: "/illustrations/shoulder-abduction.png",
+    demoVideo: "",
+    demoFallbackIcon: "🙋",
+    demoText:
+      "This movement helps with side-reaching activities such as dressing and household tasks.",
     benefits: [
       "Improve shoulder range of motion",
       "Enhance side-reaching ability",
       "Support daily activities",
-      "Increase upper-limb confidence",
     ],
     activities: [
       "Reaching for objects beside you",

@@ -6,7 +6,7 @@ const actions = [
   {
     title: "Continue Last Exercise",
     subtitle: "Shoulder Flexion",
-    href: "/session",
+    href: "/exercises/shoulder-flexion/start",
     icon: Play,
   },
   {
@@ -31,12 +31,12 @@ const actions = [
 
 export function QuickActionsCard() {
   return (
-    <Card className="h-[581px] w-full rounded-2xl border-0 bg-white p-6 shadow-none">
+    <Card className="min-h-[430px] w-full rounded-2xl border-0 bg-white p-6 shadow-none">
       <h2 className="text-[20px] font-semibold leading-[140%] text-[#1E1E1E]">
         Quick Actions
       </h2>
 
-      <div className="mt-[30px] grid grid-cols-2 gap-x-6 gap-y-9">
+      <div className="mt-7 grid grid-cols-2 gap-5">
         {actions.map((action) => {
           const Icon = action.icon;
 
@@ -44,17 +44,17 @@ export function QuickActionsCard() {
             <Link
               key={action.title}
               href={action.href}
-              className="flex h-[217px] flex-col justify-between rounded-lg bg-[#592EBD]/[0.06] p-3 transition hover:bg-[#592EBD]/10"
+              className="flex h-[150px] flex-col justify-between rounded-lg bg-[#592EBD]/[0.06] p-3 transition hover:bg-[#592EBD]/10"
             >
-              <div className="flex h-[47px] w-[47px] items-center justify-center rounded-full bg-[#592EBD] text-white">
-                <Icon size={24} fill={action.icon === Play ? "white" : "none"} />
+              <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#592EBD] text-white">
+                <Icon size={22} fill={action.icon === Play ? "white" : "none"} />
               </div>
 
               <div>
-                <h3 className="text-[20px] font-semibold leading-[140%] text-[#1E1E1E]">
+                <h3 className="text-[17px] font-semibold leading-[130%] text-[#1E1E1E]">
                   {action.title}
                 </h3>
-                <p className="mt-2 text-[14px] font-medium leading-[150%] text-[#424242]">
+                <p className="mt-1 text-[13px] font-medium leading-[150%] text-[#424242]">
                   {action.subtitle}
                 </p>
               </div>

@@ -7,7 +7,7 @@ export const exercises = [
     level: "Level 2",
     reps: "10 reps",
     difficulty: "Medium",
-    illustration: "🧍",
+    illustration: "/illustrations/shoulder-flexion.png",
   },
   {
     id: "elbow-flexion",
@@ -17,7 +17,7 @@ export const exercises = [
     level: "Level 2",
     reps: "10 reps",
     difficulty: "Medium",
-    illustration: "💪",
+    illustration: "/illustrations/elbow-flexion.png",
   },
   {
     id: "wrist-extension",
@@ -27,7 +27,7 @@ export const exercises = [
     level: "Level 2",
     reps: "10 reps",
     difficulty: "Medium",
-    illustration: "✋",
+    illustration: "/illustrations/wrist-extension.png",
   },
   {
     id: "cup-to-shelf",
@@ -37,7 +37,7 @@ export const exercises = [
     level: "Level 2",
     reps: "10 reps",
     difficulty: "Medium",
-    illustration: "☕",
+    illustration: "/illustrations/cup-to-shelf.png",
   },
   {
     id: "shoulder-abduction",
@@ -47,6 +47,6 @@ export const exercises = [
     level: "Level 2",
     reps: "10 reps",
     difficulty: "Medium",
-    illustration: "🙋",
+    illustration: "/illustrations/shoulder-abduction.png",
   },
 ];

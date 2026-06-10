@@ -1,4 +1,3 @@
-import { QuickActionsCard } from "./quick-actions-card";
 import { StreakCard } from "./streak-card";
 import { TodaysSessionCard } from "./todays-session-card";
 import { WeeklyProgressCard } from "./weekly-progress-card";
@@ -6,17 +5,17 @@ import { WelcomeSection } from "./welcome-section";
 
 export function DashboardView() {
   return (
-    <div className="grid gap-8">
-      <div className="grid grid-cols-2 items-start gap-8">
-        <WelcomeSection />
-        <TodaysSessionCard />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr_1fr]">
+        <div className="flex items-center">
+          <WelcomeSection />
+        </div>
+
+        <WeeklyProgressCard completed={3} total={5} />
+        <StreakCard days={23} />
       </div>
 
-      <div className="grid grid-cols-3 gap-8">
-        <WeeklyProgressCard completed={0} total={5} />
-        <StreakCard days={0} />
-        <QuickActionsCard />
-      </div>
+      <TodaysSessionCard />
     </div>
   );
 }

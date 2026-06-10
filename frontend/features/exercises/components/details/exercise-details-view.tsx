@@ -1,9 +1,18 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Heart, Play, RotateCw, Timer, ThumbsUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Heart,
+  Play,
+  RotateCw,
+  Timer,
+  ThumbsUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 type ExerciseDetails = {
+  slug: string;
   title: string;
   category: string;
   description: string;
@@ -12,6 +21,7 @@ type ExerciseDetails = {
   duration: string;
   type: string;
   instruction: string;
+  startIllustration?: string;
   illustration: string;
   benefits: string[];
   activities: string[];
@@ -23,6 +33,11 @@ type ExerciseDetailsViewProps = {
 };
 
 export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
+  const startImage = exercise.startIllustration ?? "/illustrations/arm-down.png";
+
+  const exerciseSlug =
+    exercise.slug ?? exercise.title.toLowerCase().replaceAll(" ", "-");
+
   return (
     <div className="space-y-6">
       <Link
@@ -36,8 +51,8 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
       <div className="grid grid-cols-[1.6fr_1fr] gap-6">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-[112px] w-[112px] items-center justify-center rounded-2xl bg-white text-5xl">
-              {exercise.illustration}
+            <div className="flex h-[112px] w-[112px] items-center justify-center rounded-2xl bg-white p-2">
+              <ExerciseImage src={exercise.illustration} alt={exercise.title} />
             </div>
 
             <div>
@@ -52,10 +67,11 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
 
           <Card className="grid grid-cols-[1fr_260px] rounded-2xl border-0 bg-white p-5 shadow-none">
             <div className="rounded-2xl bg-[#F7F4F2] p-8">
-              <div className="flex h-[210px] items-center justify-center gap-20 text-8xl">
-                <span>{exercise.illustration}</span>
-                <span>{exercise.illustration}</span>
-              </div>
+              <ExerciseAnimation
+                startImage={startImage}
+                endImage={exercise.illustration}
+                title={exercise.title}
+              />
 
               <div className="mt-5 rounded-2xl bg-[#ECE8FF] px-6 py-5 text-[18px] font-semibold text-[#1E1E1E]">
                 {exercise.instruction}
@@ -63,10 +79,26 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
             </div>
 
             <div className="space-y-6 border-l px-6">
-              <SummaryItem icon={<RotateCw />} label="Difficulty" value={exercise.level} />
-              <SummaryItem icon={<RotateCw />} label="Repetitions" value={exercise.reps} />
-              <SummaryItem icon={<Timer />} label="Duration" value={exercise.duration} />
-              <SummaryItem icon={<ThumbsUp />} label="Exercise Type" value={exercise.type} />
+              <SummaryItem
+                icon={<RotateCw />}
+                label="Difficulty"
+                value={exercise.level}
+              />
+              <SummaryItem
+                icon={<RotateCw />}
+                label="Repetitions"
+                value={exercise.reps}
+              />
+              <SummaryItem
+                icon={<Timer />}
+                label="Duration"
+                value={exercise.duration}
+              />
+              <SummaryItem
+                icon={<ThumbsUp />}
+                label="Exercise Type"
+                value={exercise.type}
+              />
             </div>
           </Card>
 
@@ -76,19 +108,39 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
             </h2>
 
             <div className="mt-4 grid grid-cols-5 gap-4">
-              {exercise.steps.map((step, index) => (
-                <div key={step} className="rounded-2xl bg-[#F7F4F2] p-4">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#ECE8FF] text-[16px] font-semibold text-[#7875FB]">
-                    {index + 1}
+              {exercise.steps.map((step, index) => {
+                const stepImage =
+                  index === 0 || index === 2
+                    ? startImage
+                    : exercise.illustration;
+
+                return (
+                  <div key={step} className="rounded-2xl bg-[#F7F4F2] p-4">
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#ECE8FF] text-[16px] font-semibold text-[#7875FB]">
+                      {index + 1}
+                    </div>
+
+                    <div className="flex h-[120px] items-center justify-center">
+                      {index === 4 ? (
+                        <div className="flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#ECE8FF] text-[#7875FB]">
+                          <RotateCw size={44} />
+                        </div>
+                      ) : (
+                        <div className="h-[110px] w-[110px]">
+                          <ExerciseImage
+                            src={stepImage}
+                            alt={`${exercise.title} step ${index + 1}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="mt-3 text-[16px] font-medium leading-[140%]">
+                      {step}
+                    </p>
                   </div>
-                  <div className="flex h-[100px] items-center justify-center text-5xl">
-                    {index === 4 ? "🔁" : exercise.illustration}
-                  </div>
-                  <p className="mt-3 text-[16px] font-medium leading-[140%]">
-                    {step}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
@@ -135,18 +187,76 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
           </Card>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="h-16 rounded-full text-[18px]">
-              <Play className="mr-2 h-5 w-5" />
-              Watch Demo
+            <Button
+              asChild
+              variant="outline"
+              className="h-16 rounded-full text-[18px]"
+            >
+              <Link href={`/exercises/${exerciseSlug}/demo`}>
+                <Play className="mr-2 h-5 w-5" />
+                Watch Demo
+              </Link>
             </Button>
 
-            <Button className="h-16 rounded-full bg-[#592EBD] text-[18px] hover:bg-[#4B24A8]">
-              Start Exercise
+            <Button
+              asChild
+              className="h-16 rounded-full bg-[#592EBD] text-[18px] hover:bg-[#4B24A8]"
+            >
+              <Link href={`/exercises/${exerciseSlug}/start`}>
+                Start Exercise
+              </Link>
             </Button>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ExerciseAnimation({
+  startImage,
+  endImage,
+  title,
+}: {
+  startImage: string;
+  endImage: string;
+  title: string;
+}) {
+  return (
+    <div className="relative flex h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-[#F7F4F2]">
+      <Image
+        src={startImage}
+        alt={`${title} starting position`}
+        width={520}
+        height={520}
+        quality={100}
+        priority
+        className="absolute h-[220px] w-[220px] object-contain animate-[fadeOne_2.4s_ease-in-out_infinite]"
+      />
+
+      <Image
+        src={endImage}
+        alt={`${title} exercise position`}
+        width={520}
+        height={520}
+        quality={100}
+        priority
+        className="absolute h-[220px] w-[220px] object-contain animate-[fadeTwo_2.4s_ease-in-out_infinite]"
+      />
+    </div>
+  );
+}
+
+function ExerciseImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={520}
+      height={520}
+      quality={100}
+      className="h-full w-full object-contain"
+    />
   );
 }
 

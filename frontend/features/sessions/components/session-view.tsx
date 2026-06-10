@@ -3,50 +3,51 @@ import { LiveFeedbackCard } from "./live-feedback-card";
 import { RangeOfMotionCard } from "./range-of-motion-card";
 import { RepProgressCard } from "./rep-progress-card";
 import { SessionControls } from "./session-controls";
+import { SessionCompleteModal } from "./session-complete-modal"; // <-- import it
+import { SupportModal } from "./support-modal";
 
 export function SessionView() {
   return (
-    <div className="grid grid-cols-[2fr_1fr] gap-6">
-      <div className="space-y-5">
-        <div className="rounded-2xl bg-white p-6">
-          <div className="mb-5 flex items-center justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)_446px] gap-[26px]">
+      <div className="overflow-hidden rounded-2xl bg-white">
+        <div className="flex items-center justify-between px-[30px] py-4">
+          <div className="flex items-center gap-[13px]">
+            <div className="flex h-[91px] w-[91px] items-center justify-center rounded-xl bg-[#F7F4F2] text-5xl">
+              🧍
+            </div>
+
             <div>
-              <h1 className="text-[32px] font-bold text-[#1E1E1E]">
+              <h1 className="text-[28px] font-semibold leading-[150%] text-[#1E1E1E]">
                 Shoulder Flexion
               </h1>
-              <p className="mt-1 text-[20px] text-[#8A8A8A]">
+              <p className="text-[20px] leading-[150%] text-[#888888]">
                 Lift your arm forward and up.
               </p>
             </div>
+          </div>
 
-            <div className="rounded-full bg-[#42B267] px-6 py-4 text-[18px] font-semibold text-white">
+          <div className="rounded-[30px] bg-black/10 p-2 backdrop-blur-md">
+            <div className="rounded-[24px] bg-[#40C057] px-6 py-4 text-[18px] font-semibold text-white">
               Good Form 👍
             </div>
           </div>
-
-          <CameraPlaceholder />
-
-          <div className="mt-5">
-            <SessionControls />
-          </div>
         </div>
+
+        <CameraPlaceholder />
+
+        <div className="px-[30px] py-6">
+          <SessionControls />
+        </div>
+
+        {/* TEMPORARY: show the modal for preview */}
+        <SessionCompleteModal />
+        <SupportModal />
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-[26px]">
         <LiveFeedbackCard />
         <RepProgressCard />
         <RangeOfMotionCard />
-
-        <div className="rounded-2xl bg-[#ECE8FF] p-6">
-          <h2 className="text-[22px] font-bold text-[#1E1E1E]">
-            Session Tips
-          </h2>
-          <ul className="mt-4 list-disc space-y-2 pl-5 text-[16px] text-[#333333]">
-            <li>Keep shoulders relaxed</li>
-            <li>Move slowly and steadily</li>
-            <li>Take breaks when needed</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

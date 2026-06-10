@@ -1,9 +1,10 @@
 import { AppLayout } from "@/components/layout/app-layout";
+import { HistoryView } from "@/features/history/components/history-view";
 
 export default function HistoryPage() {
   return (
     <AppLayout>
-      <h1>History</h1>
+      <HistoryView hasData={true} />
     </AppLayout>
   );
 }

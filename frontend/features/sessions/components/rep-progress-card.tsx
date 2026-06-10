@@ -1,23 +1,33 @@
 import { Card } from "@/components/ui/card";
 
 export function RepProgressCard() {
-  return (
-    <Card className="rounded-2xl border-0 bg-white p-6 shadow-none">
-      <h2 className="text-[22px] font-bold text-[#1E1E1E]">Rep Progress</h2>
+  const currentRep = 7;
+  const totalReps = 10;
 
-      <div className="mt-6 flex gap-2">
-        {Array.from({ length: 10 }).map((_, index) => (
-          <div
-            key={index}
-            className={`h-5 flex-1 rounded-md ${
-              index < 7 ? "bg-[#592EBD]" : "bg-[#D9D9D9]"
-            }`}
-          />
-        ))}
+  return (
+    <Card className="h-[158px] rounded-2xl border-0 bg-white p-5 shadow-none">
+      <h2 className="text-[20px] font-semibold leading-[150%] text-[#1E1E1E]">
+        Rep Progress
+      </h2>
+
+      <div className="mt-8 flex rounded-full bg-[#FAFAFA] p-[3px]">
+        <div className="flex w-full gap-[2px]">
+          {Array.from({ length: totalReps }).map((_, index) => (
+            <div
+              key={index}
+              className={`h-[22px] flex-1 ${
+                index < currentRep ? "bg-[#592EBD]" : "bg-[#D9D9D9]"
+              } ${index === 0 ? "rounded-l-full" : "rounded-md"} ${
+                index === totalReps - 1 ? "rounded-r-full" : ""
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
-      <p className="mt-6 text-[32px] font-bold text-[#1E1E1E]">
-        7<span className="text-[20px] font-normal text-[#8A8A8A]">/10 Reps</span>
+      <p className="mt-5 text-[32px] font-semibold leading-[120%] text-[#111111]">
+        {currentRep}
+        <span className="text-[20px] text-[#B3B3B3]">/{totalReps} Reps</span>
       </p>
     </Card>
   );

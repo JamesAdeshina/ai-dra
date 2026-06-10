@@ -1,9 +1,10 @@
 import { AppLayout } from "@/components/layout/app-layout";
+import { ProgressView } from "@/features/progress/components/progress-view";
 
 export default function ProgressPage() {
   return (
     <AppLayout>
-      <h1>Progress</h1>
+      <ProgressView hasData={true} />
     </AppLayout>
   );
 }
