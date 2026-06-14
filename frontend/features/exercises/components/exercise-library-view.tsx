@@ -13,7 +13,7 @@ export function ExerciseLibraryView() {
           level={exercise.level}
           reps={exercise.reps}
           difficulty={exercise.difficulty}
-          illustration={exercise.illustration}
+          illustration={exercise.images.thumbnail}
         />
       ))}
     </div>

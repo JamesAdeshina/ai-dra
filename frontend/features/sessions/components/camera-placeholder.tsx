@@ -1,42 +1,200 @@
-import { Maximize2, Video, Volume2 } from "lucide-react";
+"use client";
 
-export function CameraPlaceholder() {
+import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Maximize2, Minimize2, Video } from "lucide-react";
+import { PoseOverlay } from "@/features/pose/components/pose-overlay";
+import { usePoseTracker } from "@/features/pose/hooks/use-pose-tracker";
+
+type CameraPlaceholderProps = {
+  isPaused?: boolean;
+  onAngleChange?: (angle: number) => void;
+  onReachChange?: (reachValue: number) => void;
+  fullScreenControls?: ReactNode;
+};
+
+export function CameraPlaceholder({
+  isPaused = false,
+  onAngleChange,
+  onReachChange,
+  fullScreenControls,
+}: CameraPlaceholderProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const [hasCamera, setHasCamera] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const { landmarks, angle, reachValue, isTracking } = usePoseTracker(videoRef);
+
+  useEffect(() => {
+    if (!isPaused) {
+      onAngleChange?.(isTracking ? angle : 0);
+      onReachChange?.(isTracking ? reachValue : 0);
+    }
+  }, [angle, reachValue, isTracking, isPaused, onAngleChange, onReachChange]);
+
+  useEffect(() => {
+    let retryTimer: NodeJS.Timeout | null = null;
+
+    const stopCamera = () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      setHasCamera(false);
+    };
+
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+          },
+          audio: false,
+        });
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          setHasCamera(true);
+          setCameraError("");
+        }
+
+        const videoTrack = stream.getVideoTracks()[0];
+
+        if (videoTrack) {
+          videoTrack.onended = () => {
+            setHasCamera(false);
+            setCameraError("Camera stopped. Reconnecting...");
+          };
+
+          videoTrack.onmute = () => {
+            setHasCamera(false);
+            setCameraError("Camera paused. Waiting for camera...");
+          };
+
+          videoTrack.onunmute = () => {
+            setHasCamera(true);
+            setCameraError("");
+          };
+        }
+      } catch (error) {
+        console.error(error);
+        setHasCamera(false);
+        setCameraError(
+          "Camera access is blocked. Please allow camera permission to start the session."
+        );
+      }
+    };
+
+    startCamera();
+
+    retryTimer = setInterval(() => {
+      const stream = streamRef.current;
+      const track = stream?.getVideoTracks()[0];
+
+      if (!track || track.readyState === "ended") {
+        startCamera();
+      }
+    }, 3000);
+
+    return () => {
+      if (retryTimer) clearInterval(retryTimer);
+      stopCamera();
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullScreenChange);
+    };
+  }, []);
+
+  const handleFullScreen = async () => {
+    if (!containerRef.current) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const statusLabel = !hasCamera
+    ? "Camera Off"
+    : isPaused
+      ? "Paused"
+      : isTracking
+        ? "Live"
+        : "No Body Detected";
+
+  const statusColor =
+    hasCamera && !isPaused && isTracking ? "bg-[#54D060]" : "bg-[#FF4D4F]";
+
+  const displayAngle = isPaused ? angle : isTracking ? angle : 0;
+
   return (
-    <div className="relative h-[689px] overflow-hidden bg-[#1E1E1E]">
-      <div className="absolute inset-0 bg-[url('/images/session-preview.png')] bg-cover bg-center" />
+    <div
+      ref={containerRef}
+      className="relative h-[689px] overflow-hidden bg-[#1E1E1E]"
+    >
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className="h-full w-full object-cover"
+      />
 
-      <div className="absolute left-5 top-4 flex items-center gap-2 rounded-full bg-black/30 px-4 py-3">
-        <span className="h-[18px] w-[18px] rounded-full bg-[#54D060]" />
-        <span className="text-[16px] font-semibold text-white">Live</span>
-      </div>
+      {landmarks.length > 0 && <PoseOverlay landmarks={landmarks} />}
 
-      <div className="absolute left-1/2 top-[21px] flex -translate-x-1/2 items-center gap-3 rounded-[24px] bg-[#40C057] px-5 py-4 text-black">
-        <Volume2 size={24} />
-        <span className="text-[17px] font-semibold">
-          Raise your right arm a little higher
+      {isPaused && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 backdrop-blur-[2px]">
+          <div className="rounded-3xl bg-white px-8 py-6 text-center shadow-lg">
+            <p className="text-[24px] font-semibold text-[#1E1E1E]">
+              Session Paused
+            </p>
+            <p className="mt-2 text-[16px] text-[#757575]">
+              Tap Resume to continue
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!hasCamera && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#1E1E1E]/80 px-6 text-center">
+          <p className="max-w-[420px] text-[18px] font-medium leading-[150%] text-white">
+            {cameraError || "Waiting for camera..."}
+          </p>
+        </div>
+      )}
+
+      <div className="absolute left-5 top-4 z-30 flex items-center gap-2 rounded-full bg-black/40 px-4 py-3">
+        <span className={`h-[18px] w-[18px] rounded-full ${statusColor}`} />
+        <span className="text-[16px] font-semibold text-white">
+          {statusLabel}
         </span>
       </div>
 
-      <div className="absolute left-[38%] top-[32%] h-[340px] w-[280px]">
-        <div className="absolute left-8 top-8 h-[360px] w-[3px] rotate-[-3deg] bg-[#06FA0A]" />
-        <div className="absolute left-8 top-8 h-[3px] w-[270px] rotate-[-6deg] bg-[#06FA0A]" />
-
-        {[
-          "left-[28px] top-[20px]",
-          "left-[150px] top-[10px]",
-          "left-[270px] top-[-5px]",
-          "left-[30px] top-[105px]",
-          "left-[35px] top-[190px]",
-          "left-[45px] top-[305px]",
-        ].map((position) => (
-          <span
-            key={position}
-            className={`absolute ${position} h-[18px] w-[18px] rounded-full bg-[#D9D9D9]`}
-          />
-        ))}
+      <div className="absolute right-5 top-4 z-30 rounded-full bg-black/40 px-4 py-3 text-white">
+        <span className="text-[16px] font-semibold">
+            Angle: {displayAngle}° | Reach: {Number(reachValue ?? 0).toFixed(3)}
+        </span>
       </div>
 
-      <div className="absolute bottom-4 left-4 flex items-start gap-2 rounded-[24px] bg-black/30 px-4 py-3">
+      <div className="absolute bottom-4 left-4 z-30 flex items-start gap-2 rounded-[24px] bg-black/40 px-4 py-3">
         <Video size={18} className="text-white" />
         <div>
           <p className="text-[16px] font-semibold text-white">Camera</p>
@@ -44,10 +202,23 @@ export function CameraPlaceholder() {
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-[24px] bg-black/30 px-4 py-3 text-white">
-        <span className="text-[16px] font-semibold">Full Screen</span>
-        <Maximize2 size={14} />
-      </div>
+      {isFullScreen && fullScreenControls && (
+        <div className="absolute bottom-6 left-1/2 z-30 w-[960px] -translate-x-1/2 rounded-full bg-white/95 p-2 shadow-lg backdrop-blur-md">
+          {fullScreenControls}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleFullScreen}
+        className="absolute bottom-6 right-6 z-40 flex items-center gap-2 rounded-[24px] bg-black/40 px-4 py-3 text-white"
+      >
+        <span className="text-[16px] font-semibold">
+          {isFullScreen ? "Exit Full Screen" : "Full Screen"}
+        </span>
+
+        {isFullScreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+      </button>
     </div>
   );
 }

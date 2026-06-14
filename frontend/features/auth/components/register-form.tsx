@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 export function RegisterForm() {
   return (
     <div>
-      <h1 className="text-[40px] font-bold leading-tight text-[#010E0E]">
-        Create Your <br /> Account
+      <h1 className="text-[30px] font-bold leading-tight text-[#010E0E]">
+        Create Your Account
       </h1>
 
-      <p className="mt-3 text-[16px] text-[#757575]">
+      <p className="mt-2 text-[16px] text-[#757575]">
         Let&apos;s get you ready for your rehabilitation journey.
       </p>
 
@@ -61,7 +61,7 @@ export function RegisterForm() {
       </div>
 
       <Link href="/onboarding">
-        <Button className="mt-24 h-16 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]">
+        <Button className="mt-10 h-16 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]">
           Create Account
         </Button>
       </Link>

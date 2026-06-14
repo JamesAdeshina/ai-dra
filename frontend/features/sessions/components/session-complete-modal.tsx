@@ -1,7 +1,23 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export function SessionCompleteModal() {
+type SessionCompleteModalProps = {
+  exerciseTitle: string;
+  repsCompleted?: number;
+  totalReps?: number;
+  averageScore?: number;
+  duration?: string;
+  onClose?: () => void;
+};
+
+export function SessionCompleteModal({
+  exerciseTitle,
+  repsCompleted = 0,
+  totalReps = 10,
+  averageScore = 0,
+  duration = "0 min 00 sec",
+  onClose,
+}: SessionCompleteModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm">
       <div className="flex h-[515px] w-[388px] flex-col items-center rounded-[24px] bg-white px-6 py-[30px]">
@@ -21,19 +37,22 @@ export function SessionCompleteModal() {
 
           <div className="flex h-[120px] w-full items-center justify-center rounded-xl bg-[#F5F5F5] text-center text-[14px] font-medium leading-[150%] text-black">
             <p>
-              Exercise: Shoulder Flexion
+              Exercise: {exerciseTitle}
               <br />
-              Repetitions Completed: 10/10
+              Repetitions Completed: {repsCompleted}/{totalReps}
               <br />
-              Average Score: 87%
+              Average Score: {averageScore}%
               <br />
-              Duration: 4 min 52 sec
+              Duration: {duration}
             </p>
           </div>
 
           <div className="mt-2 flex w-full flex-col gap-2">
-            <Button className="h-[53px] rounded-[53px] bg-[#4F2BB1] text-[14px] font-medium text-[#FAFAFA] hover:bg-[#3F2292]">
-              Continue Next Exercise
+            <Button
+              onClick={onClose}
+              className="h-[53px] rounded-[53px] bg-[#4F2BB1] text-[14px] font-medium text-[#FAFAFA] hover:bg-[#3F2292]"
+            >
+              Continue Session
             </Button>
 
             <Link href="/dashboard">

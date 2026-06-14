@@ -6,10 +6,10 @@ type AuthLayoutProps = {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <main className="flex min-h-screen flex-col items-center bg-[#F7F4F2] px-6 pt-14">
+    <main className="flex min-h-screen flex-col items-center bg-[#F7F4F2] px-6 pt-8">
       <Logo />
 
-      <div className="mt-16 w-full max-w-[520px] rounded-2xl bg-white p-10">
+      <div className="mt-8 w-full max-w-[520px] rounded-2xl bg-white p-10">
         {children}
       </div>
     </main>

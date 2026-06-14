@@ -21,8 +21,13 @@ type ExerciseDetails = {
   duration: string;
   type: string;
   instruction: string;
-  startIllustration?: string;
-  illustration: string;
+  images: {
+    thumbnail: string;
+    states: {
+      start: string;
+      active: string;
+    };
+  };
   benefits: string[];
   activities: string[];
   steps: string[];
@@ -33,10 +38,9 @@ type ExerciseDetailsViewProps = {
 };
 
 export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
-  const startImage = exercise.startIllustration ?? "/illustrations/arm-down.png";
-
-  const exerciseSlug =
-    exercise.slug ?? exercise.title.toLowerCase().replaceAll(" ", "-");
+  const startImage = exercise.images.states.start;
+  const activeImage = exercise.images.states.active;
+  const thumbnailImage = exercise.images.thumbnail;
 
   return (
     <div className="space-y-6">
@@ -52,7 +56,7 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <div className="flex h-[112px] w-[112px] items-center justify-center rounded-2xl bg-white p-2">
-              <ExerciseImage src={exercise.illustration} alt={exercise.title} />
+              <ExerciseImage src={thumbnailImage} alt={exercise.title} />
             </div>
 
             <div>
@@ -69,7 +73,7 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
             <div className="rounded-2xl bg-[#F7F4F2] p-8">
               <ExerciseAnimation
                 startImage={startImage}
-                endImage={exercise.illustration}
+                endImage={activeImage}
                 title={exercise.title}
               />
 
@@ -79,26 +83,10 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
             </div>
 
             <div className="space-y-6 border-l px-6">
-              <SummaryItem
-                icon={<RotateCw />}
-                label="Difficulty"
-                value={exercise.level}
-              />
-              <SummaryItem
-                icon={<RotateCw />}
-                label="Repetitions"
-                value={exercise.reps}
-              />
-              <SummaryItem
-                icon={<Timer />}
-                label="Duration"
-                value={exercise.duration}
-              />
-              <SummaryItem
-                icon={<ThumbsUp />}
-                label="Exercise Type"
-                value={exercise.type}
-              />
+              <SummaryItem icon={<RotateCw />} label="Difficulty" value={exercise.level} />
+              <SummaryItem icon={<RotateCw />} label="Repetitions" value={exercise.reps} />
+              <SummaryItem icon={<Timer />} label="Duration" value={exercise.duration} />
+              <SummaryItem icon={<ThumbsUp />} label="Exercise Type" value={exercise.type} />
             </div>
           </Card>
 
@@ -110,9 +98,7 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
             <div className="mt-4 grid grid-cols-5 gap-4">
               {exercise.steps.map((step, index) => {
                 const stepImage =
-                  index === 0 || index === 2
-                    ? startImage
-                    : exercise.illustration;
+                  index === 0 || index === 2 ? startImage : activeImage;
 
                 return (
                   <div key={step} className="rounded-2xl bg-[#F7F4F2] p-4">
@@ -126,7 +112,7 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
                           <RotateCw size={44} />
                         </div>
                       ) : (
-                        <div className="h-[110px] w-[110px]">
+                        <div className="h-[310px] w-[310px]">
                           <ExerciseImage
                             src={stepImage}
                             alt={`${exercise.title} step ${index + 1}`}
@@ -150,12 +136,12 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
             <h2 className="text-[22px] font-bold text-[#1E1E1E]">
               About This Exercise
             </h2>
-            <p className="mt-3 text-[16px] leading-[150%] text-[#666666]">
+            <p className="mt-0 text-[16px] leading-[150%] text-[#666666]">
               {exercise.description}
             </p>
 
-            <h3 className="mt-6 text-[22px] font-bold">Benefits</h3>
-            <div className="mt-4 space-y-4">
+            <h3 className="mt-2 text-[22px] font-bold">Benefits</h3>
+            <div className="mt-1 space-y-2">
               {exercise.benefits.map((benefit) => (
                 <div key={benefit} className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F7F4F2] text-[#592EBD]">
@@ -187,12 +173,8 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
           </Card>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button
-              asChild
-              variant="outline"
-              className="h-16 rounded-full text-[18px]"
-            >
-              <Link href={`/exercises/${exerciseSlug}/demo`}>
+            <Button asChild variant="outline" className="h-16 rounded-full text-[18px]">
+              <Link href={`/exercises/${exercise.slug}/demo`}>
                 <Play className="mr-2 h-5 w-5" />
                 Watch Demo
               </Link>
@@ -202,7 +184,7 @@ export function ExerciseDetailsView({ exercise }: ExerciseDetailsViewProps) {
               asChild
               className="h-16 rounded-full bg-[#592EBD] text-[18px] hover:bg-[#4B24A8]"
             >
-              <Link href={`/exercises/${exerciseSlug}/start`}>
+              <Link href={`/exercises/${exercise.slug}/start`}>
                 Start Exercise
               </Link>
             </Button>
@@ -231,7 +213,7 @@ function ExerciseAnimation({
         height={520}
         quality={100}
         priority
-        className="absolute h-[220px] w-[220px] object-contain animate-[fadeOne_2.4s_ease-in-out_infinite]"
+        className="absolute h-[420px] w-[420px] object-contain animate-[fadeOne_2.4s_ease-in-out_infinite]"
       />
 
       <Image
@@ -241,7 +223,7 @@ function ExerciseAnimation({
         height={520}
         quality={100}
         priority
-        className="absolute h-[220px] w-[220px] object-contain animate-[fadeTwo_2.4s_ease-in-out_infinite]"
+        className="absolute h-[420px] w-[420px] object-contain animate-[fadeTwo_2.4s_ease-in-out_infinite]"
       />
     </div>
   );

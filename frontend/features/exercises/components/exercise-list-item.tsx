@@ -22,22 +22,17 @@ export function ExerciseListItem({
   difficulty,
   illustration,
 }: ExerciseListItemProps) {
-  const isImagePath = illustration.startsWith("/");
-
   return (
     <Card className="grid grid-cols-[112px_1fr_130px_140px_48px] items-center gap-6 rounded-2xl border-0 bg-white p-4 shadow-none">
       <div className="flex h-[112px] w-[112px] items-center justify-center rounded-2xl bg-[#F7F4F2] p-2">
-        {isImagePath ? (
-          <Image
-            src={illustration}
-            alt={title}
-            width={96}
-            height={96}
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <span className="text-5xl">{illustration}</span>
-        )}
+        <Image
+          src={illustration}
+          alt={title}
+          width={240}
+          height={240}
+          quality={100}
+          className="h-full w-full object-contain"
+        />
       </div>
 
       <div>

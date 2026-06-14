@@ -1,8 +1,15 @@
 import { Card } from "@/components/ui/card";
 
-export function RepProgressCard() {
-  const currentRep = 7;
-  const totalReps = 10;
+type RepProgressCardProps = {
+  currentRep: number;
+  totalReps: number;
+};
+
+export function RepProgressCard({
+  currentRep,
+  totalReps,
+}: RepProgressCardProps) {
+  const safeCurrentRep = Math.min(currentRep, totalReps);
 
   return (
     <Card className="h-[158px] rounded-2xl border-0 bg-white p-5 shadow-none">
@@ -16,7 +23,7 @@ export function RepProgressCard() {
             <div
               key={index}
               className={`h-[22px] flex-1 ${
-                index < currentRep ? "bg-[#592EBD]" : "bg-[#D9D9D9]"
+                index < safeCurrentRep ? "bg-[#592EBD]" : "bg-[#D9D9D9]"
               } ${index === 0 ? "rounded-l-full" : "rounded-md"} ${
                 index === totalReps - 1 ? "rounded-r-full" : ""
               }`}
@@ -26,8 +33,10 @@ export function RepProgressCard() {
       </div>
 
       <p className="mt-5 text-[32px] font-semibold leading-[120%] text-[#111111]">
-        {currentRep}
-        <span className="text-[20px] text-[#B3B3B3]">/{totalReps} Reps</span>
+        {safeCurrentRep}
+        <span className="text-[20px] text-[#B3B3B3]">
+          /{totalReps} Reps
+        </span>
       </p>
     </Card>
   );

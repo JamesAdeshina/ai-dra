@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Camera, Check, LockKeyhole, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -6,18 +9,47 @@ type PermissionsStepProps = {
 };
 
 export function PermissionsStep({ onNext }: PermissionsStepProps) {
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleCameraPermission = async () => {
+    setIsRequesting(true);
+    setError("");
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera access is not supported in this browser.");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+
+      stream.getTracks().forEach((track) => track.stop());
+
+      onNext();
+    } catch (err) {
+      console.error(err);
+      setError(
+        "Camera access was not allowed. You can continue for now and enable it later in Settings."
+      );
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
   return (
     <div className="text-center">
       <h1 className="text-[28px] font-bold text-[#010E0E]">
         Camera Permission
       </h1>
 
-      <p className="mx-auto mt-3 max-w-[430px] text-[16px] leading-[150%] text-[#757575]">
+      <p className="mx-auto mt-1 max-w-[430px] text-[16px] leading-[150%] text-[#757575]">
         AI-DRA uses your device camera to monitor rehabilitation exercises and
         provide feedback.
       </p>
 
-      <div className="mx-auto mt-10 flex h-[120px] w-[120px] items-center justify-center rounded-full bg-[#F5F5F5]">
+      <div className="mx-auto mt-5 flex h-[120px] w-[120px] items-center justify-center rounded-full bg-[#F5F5F5]">
         <div className="relative">
           <Camera className="h-12 w-12 text-[#757575]" />
           <div className="absolute -bottom-4 -right-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#2F80ED] text-white">
@@ -26,11 +58,7 @@ export function PermissionsStep({ onNext }: PermissionsStepProps) {
         </div>
       </div>
 
-      <p className="mt-8 text-[17px] text-[#757575]">
-        No videos are shared without your permission.
-      </p>
-
-      <div className="mt-8 flex items-center gap-4 rounded-xl bg-[#F1ECFF] p-5 text-left">
+      <div className="mt-4 flex items-center gap-4 rounded-xl bg-[#F1ECFF] p-5 text-left">
         <Shield className="h-10 w-10 fill-[#2F80ED] text-white" />
 
         <div>
@@ -44,11 +72,18 @@ export function PermissionsStep({ onNext }: PermissionsStepProps) {
         </div>
       </div>
 
+      {error && (
+        <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-left text-[14px] text-red-600">
+          {error}
+        </p>
+      )}
+
       <Button
-        onClick={onNext}
-        className="mt-8 h-16 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]"
+        onClick={handleCameraPermission}
+        disabled={isRequesting}
+        className="mt-4 h-16 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]"
       >
-        Allow Camera Access
+        {isRequesting ? "Requesting Access..." : "Allow Camera Access"}
       </Button>
 
       <Button

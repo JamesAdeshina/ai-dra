@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 export function LoginForm() {
   return (
     <div>
-      <h1 className="text-[40px] font-bold text-[#010E0E]">Welcome back</h1>
+      <h1 className="text-[30px] font-bold text-[#010E0E]">Welcome back</h1>
 
       <p className="mt-2 text-[16px] text-[#757575]">
         Sign in to continue your rehabilitation.
