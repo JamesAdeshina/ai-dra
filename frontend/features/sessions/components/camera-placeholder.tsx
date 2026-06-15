@@ -3,13 +3,17 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Video } from "lucide-react";
+import { HandOverlay } from "@/features/pose/components/hand-overlay";
 import { PoseOverlay } from "@/features/pose/components/pose-overlay";
+import { useHandTracker } from "@/features/pose/hooks/use-hand-tracker";
 import { usePoseTracker } from "@/features/pose/hooks/use-pose-tracker";
 
 type CameraPlaceholderProps = {
   isPaused?: boolean;
   onAngleChange?: (angle: number) => void;
   onReachChange?: (reachValue: number) => void;
+  onWristHeightChange?: (wristHeight: number) => void;
+  onClosureChange?: (closureRatio: number) => void;
   fullScreenControls?: ReactNode;
 };
 
@@ -17,6 +21,8 @@ export function CameraPlaceholder({
   isPaused = false,
   onAngleChange,
   onReachChange,
+  onWristHeightChange,
+  onClosureChange,
   fullScreenControls,
 }: CameraPlaceholderProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -27,14 +33,31 @@ export function CameraPlaceholder({
   const [cameraError, setCameraError] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  const { landmarks, angle, reachValue, isTracking } = usePoseTracker(videoRef);
+  const pose = usePoseTracker(videoRef);
+  const hand = useHandTracker(videoRef);
+
+  const isTracking = pose.isTracking || hand.isTracking;
 
   useEffect(() => {
     if (!isPaused) {
-      onAngleChange?.(isTracking ? angle : 0);
-      onReachChange?.(isTracking ? reachValue : 0);
+      onAngleChange?.(pose.isTracking ? pose.angle : 0);
+      onReachChange?.(pose.isTracking ? pose.reachValue : 0);
+      onWristHeightChange?.(pose.isTracking ? pose.wristHeight : 0);
+      onClosureChange?.(hand.isTracking ? hand.closureRatio : 0);
     }
-  }, [angle, reachValue, isTracking, isPaused, onAngleChange, onReachChange]);
+  }, [
+    pose.angle,
+    pose.reachValue,
+    pose.wristHeight,
+    pose.isTracking,
+    hand.closureRatio,
+    hand.isTracking,
+    isPaused,
+    onAngleChange,
+    onReachChange,
+    onWristHeightChange,
+    onClosureChange,
+  ]);
 
   useEffect(() => {
     let retryTimer: NodeJS.Timeout | null = null;
@@ -138,12 +161,15 @@ export function CameraPlaceholder({
       ? "Paused"
       : isTracking
         ? "Live"
-        : "No Body Detected";
+        : "No Body / Hand Detected";
 
   const statusColor =
     hasCamera && !isPaused && isTracking ? "bg-[#54D060]" : "bg-[#FF4D4F]";
 
-  const displayAngle = isPaused ? angle : isTracking ? angle : 0;
+  const displayAngle = isPaused ? pose.angle : pose.isTracking ? pose.angle : 0;
+  const displayReach = pose.isTracking ? pose.reachValue : 0;
+  const displayWristHeight = pose.isTracking ? pose.wristHeight : 0;
+  const displayClosure = hand.isTracking ? hand.closureRatio : 0;
 
   return (
     <div
@@ -158,7 +184,8 @@ export function CameraPlaceholder({
         className="h-full w-full object-cover"
       />
 
-      {landmarks.length > 0 && <PoseOverlay landmarks={landmarks} />}
+      {pose.landmarks.length > 0 && <PoseOverlay landmarks={pose.landmarks} />}
+      {hand.landmarks.length > 0 && <HandOverlay landmarks={hand.landmarks} />}
 
       {isPaused && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 backdrop-blur-[2px]">
@@ -190,7 +217,9 @@ export function CameraPlaceholder({
 
       <div className="absolute right-5 top-4 z-30 rounded-full bg-black/40 px-4 py-3 text-white">
         <span className="text-[16px] font-semibold">
-            Angle: {displayAngle}° | Reach: {Number(reachValue ?? 0).toFixed(3)}
+          Angle: {displayAngle}° | Reach: {Number(displayReach).toFixed(3)} |
+          Height: {Number(displayWristHeight).toFixed(3)} | Grip:{" "}
+          {Number(displayClosure).toFixed(3)}
         </span>
       </div>
 

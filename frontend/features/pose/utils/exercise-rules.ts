@@ -4,7 +4,7 @@ export type PrimaryMetric =
   | "shoulder-angle"
   | "wrist-reach"
   | "wrist-height"
-  | "reach-and-grasp"
+  | "hand-closure"
   | "hand-open-close"
   | "pinch-zone";
 
@@ -17,12 +17,19 @@ export type ExerciseRule = {
   completeThreshold: number;
   returnThreshold: number;
 
+  gripThreshold?: number;
+  releaseThreshold?: number;
+  holdDurationMs?: number;
+
   feedback: {
     start: string;
     progress: string;
     complete: string;
     return: string;
     repComplete: string;
+    gripping?: string;
+    holding?: string;
+    tooEarly?: string;
   };
 };
 
@@ -32,7 +39,6 @@ export const exerciseRules: Record<string, ExerciseRule> = {
     targetReps: 10,
     primaryMetric: "wrist-reach",
 
-    // Reach distance thresholds
     startThreshold: 0.25,
     completeThreshold: 0.4,
     returnThreshold: 0.28,
@@ -43,6 +49,31 @@ export const exerciseRules: Record<string, ExerciseRule> = {
       complete: "Great reach. Now return slowly.",
       return: "Bring your arm back to the start position.",
       repComplete: "Well done. Rep completed.",
+    },
+  },
+
+  "reach-grasp": {
+    tracker: "hand",
+    targetReps: 8,
+    primaryMetric: "hand-closure",
+
+    startThreshold: 0,
+    completeThreshold: 0,
+    returnThreshold: 0,
+
+    gripThreshold: 0.6,
+    releaseThreshold: 0.2,
+    holdDurationMs: 3000,
+
+    feedback: {
+      start: "Hold an object and let your hand rest open.",
+      progress: "Close your hand around the object.",
+      gripping: "Good grip. Hold it steady.",
+      holding: "Keep holding...",
+      complete: "Great hold. Now open your hand.",
+      return: "Open your hand to release the object.",
+      repComplete: "Well done. That is one rep.",
+      tooEarly: "Try to hold the grip a little longer.",
     },
   },
 
@@ -61,24 +92,6 @@ export const exerciseRules: Record<string, ExerciseRule> = {
       complete: "Good lift. Place it carefully.",
       return: "Return your hand slowly.",
       repComplete: "Well done. Object placed.",
-    },
-  },
-
-  "reach-grasp": {
-    tracker: "pose-hand",
-    targetReps: 8,
-    primaryMetric: "reach-and-grasp",
-
-    startThreshold: 0,
-    completeThreshold: 0,
-    returnThreshold: 0,
-
-    feedback: {
-      start: "Start with your hand relaxed.",
-      progress: "Reach towards the object.",
-      complete: "Good grasp. Hold it steady.",
-      return: "Release and return slowly.",
-      repComplete: "Well done. Grasp completed.",
     },
   },
 

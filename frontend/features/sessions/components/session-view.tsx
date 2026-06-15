@@ -14,6 +14,7 @@ import { EndSessionModal } from "./end-session-modal";
 import { exerciseRules } from "@/features/pose/utils/exercise-rules";
 import {
   RepState,
+  updateHandClosureRepCounter,
   updatePoseRepCounter,
 } from "@/features/pose/utils/rep-counter";
 
@@ -39,11 +40,19 @@ export function SessionView({ exercise }: SessionViewProps) {
     [exercise.slug]
   );
 
+  const getInitialRepState = useCallback((): RepState => {
+    if (rule.primaryMetric === "hand-closure") return "OPEN";
+    return "RESTING";
+  }, [rule.primaryMetric]);
+
   const [angle, setAngle] = useState(0);
   const [reachValue, setReachValue] = useState(0);
-  const [repState, setRepState] = useState<RepState>("RESTING");
+  const [closureRatio, setClosureRatio] = useState(0);
+  const [repState, setRepState] = useState<RepState>(getInitialRepState);
   const [repCount, setRepCount] = useState(0);
   const [feedback, setFeedback] = useState(rule.feedback.start);
+  const [holdStartTime, setHoldStartTime] = useState<number | null>(null);
+  const [holdProgress, setHoldProgress] = useState(0);
 
   const [isPaused, setIsPaused] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
@@ -52,11 +61,21 @@ export function SessionView({ exercise }: SessionViewProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
 
+  const completeSessionIfNeeded = useCallback(
+    (reps: number) => {
+      if (reps >= rule.targetReps) {
+        setShowEndModal(true);
+        setIsPaused(true);
+      }
+    },
+    [rule.targetReps]
+  );
+
   const handlePauseToggle = () => {
     setIsPaused((current) => !current);
   };
 
-  const updateRepCounter = useCallback(
+  const updateWristReachRepCounter = useCallback(
     (repMetricValue: number) => {
       if (isPaused) return;
       if (repMetricValue <= 0) return;
@@ -71,16 +90,38 @@ export function SessionView({ exercise }: SessionViewProps) {
 
         setRepCount(result.reps);
         setFeedback(result.feedback);
-
-        if (result.reps >= rule.targetReps) {
-          setShowEndModal(true);
-          setIsPaused(true);
-        }
+        completeSessionIfNeeded(result.reps);
 
         return result.state;
       });
     },
-    [isPaused, repCount, rule]
+    [completeSessionIfNeeded, isPaused, repCount, rule]
+  );
+
+  const updateHandClosureCounter = useCallback(
+    (newClosureRatio: number) => {
+      if (isPaused) return;
+      if (newClosureRatio <= 0) return;
+
+      setRepState((currentState) => {
+        const result = updateHandClosureRepCounter({
+          value: newClosureRatio,
+          currentState,
+          repCount,
+          rule,
+          holdStartTime,
+        });
+
+        setRepCount(result.reps);
+        setFeedback(result.feedback);
+        setHoldStartTime(result.holdStartTime ?? null);
+        setHoldProgress(result.holdProgress ?? 0);
+        completeSessionIfNeeded(result.reps);
+
+        return result.state;
+      });
+    },
+    [completeSessionIfNeeded, holdStartTime, isPaused, repCount, rule]
   );
 
   const handleAngleChange = useCallback((newAngle: number) => {
@@ -94,10 +135,23 @@ export function SessionView({ exercise }: SessionViewProps) {
       setReachValue(newReachValue);
 
       if (rule.primaryMetric === "wrist-reach") {
-        updateRepCounter(newReachValue);
+        updateWristReachRepCounter(newReachValue);
       }
     },
-    [isPaused, rule.primaryMetric, updateRepCounter]
+    [isPaused, rule.primaryMetric, updateWristReachRepCounter]
+  );
+
+  const handleClosureChange = useCallback(
+    (newClosureRatio: number) => {
+      if (isPaused) return;
+
+      setClosureRatio(newClosureRatio);
+
+      if (rule.primaryMetric === "hand-closure") {
+        updateHandClosureCounter(newClosureRatio);
+      }
+    },
+    [isPaused, rule.primaryMetric, updateHandClosureCounter]
   );
 
   const exitFullscreenIfNeeded = async () => {
@@ -165,12 +219,15 @@ export function SessionView({ exercise }: SessionViewProps) {
   }, [isPaused, showEndModal, showEndConfirmModal, showDemoModal]);
 
   useEffect(() => {
-    setRepState("RESTING");
+    setRepState(getInitialRepState());
     setRepCount(0);
     setFeedback(rule.feedback.start);
     setAngle(0);
     setReachValue(0);
-  }, [exercise.slug, rule.feedback.start]);
+    setClosureRatio(0);
+    setHoldStartTime(null);
+    setHoldProgress(0);
+  }, [exercise.slug, getInitialRepState, rule.feedback.start]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -239,10 +296,22 @@ export function SessionView({ exercise }: SessionViewProps) {
             </div>
           </div>
 
+          {holdProgress > 0 && holdProgress < 1 && (
+            <div className="px-[30px] pb-4">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-[#E5E5E5]">
+                <div
+                  className="h-full rounded-full bg-[#592EBD] transition-all duration-100"
+                  style={{ width: `${Math.round(holdProgress * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <CameraPlaceholder
             isPaused={isPaused}
             onAngleChange={handleAngleChange}
             onReachChange={handleReachChange}
+            onClosureChange={handleClosureChange}
             fullScreenControls={
               <SessionControls
                 isPaused={isPaused}
@@ -269,7 +338,6 @@ export function SessionView({ exercise }: SessionViewProps) {
 
         <div className="space-y-[26px]">
           <LiveFeedbackCard />
-
 
           <RepProgressCard
             currentRep={repCount}

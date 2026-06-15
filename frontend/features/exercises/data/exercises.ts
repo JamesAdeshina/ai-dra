@@ -21,7 +21,7 @@ export const exercises = [
 
   {
     id: "reach-grasp",
-    title: "Reach and Grasp Object",
+    title: "Grasp and Hold Object",
     description: "Reach forward and grasp an everyday object.",
     category: "Grasp / Grip",
     level: "Level 2",

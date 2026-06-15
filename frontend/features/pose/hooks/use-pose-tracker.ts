@@ -21,6 +21,7 @@ export function usePoseTracker(
   const [landmarks, setLandmarks] = useState<NormalizedLandmark[]>([]);
   const [angle, setAngle] = useState(0);
   const [reachValue, setReachValue] = useState(0);
+  const [wristHeight, setWristHeight] = useState(0);
   const [isTracking, setIsTracking] = useState(false);
   const [isModelReady, setIsModelReady] = useState(false);
 
@@ -52,9 +53,11 @@ export function usePoseTracker(
 
     return () => {
       isMounted = false;
+
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+
       poseLandmarkerRef.current?.close();
     };
   }, []);
@@ -81,35 +84,37 @@ export function usePoseTracker(
             setLandmarks([]);
             setAngle(0);
             setReachValue(0);
+            setWristHeight(0);
             setIsTracking(false);
             lastUpdateRef.current = now;
           }
         } else {
           const pose = smootherRef.current.smoothLandmarks(rawPose);
 
-          // Select landmarks based on affected arm
           const shoulder = affectedArm === "right" ? pose[12] : pose[11];
-          const elbow    = affectedArm === "right" ? pose[14] : pose[13];
-          const wrist    = affectedArm === "right" ? pose[16] : pose[15];
-          const hip      = affectedArm === "right" ? pose[24] : pose[23];
+          const elbow = affectedArm === "right" ? pose[14] : pose[13];
+          const wrist = affectedArm === "right" ? pose[16] : pose[15];
+          const hip = affectedArm === "right" ? pose[24] : pose[23];
 
           let newAngle = 0;
           let newReachValue = 0;
+          let newWristHeight = 0;
 
-          // Angle for ROM display
+          // ROM display only
           if (hip && shoulder && elbow) {
             newAngle = calculateAngle(hip, shoulder, elbow);
           }
 
-          // Reach value for rep counting
-          // 3D distance from shoulder to wrist
-          // Captures forward, sideways, and upward reach
+          // Target Touch rep metric
           if (shoulder && wrist) {
             const dx = wrist.x - shoulder.x;
             const dy = wrist.y - shoulder.y;
-            // const dz = (wrist.z ?? 0) - (shoulder.z ?? 0);
-            // newReachValue = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            newReachValue = Math.sqrt(dx * dx + dy * dy); 
+
+            newReachValue = Math.sqrt(dx * dx + dy * dy);
+
+            // Lift and Place rep metric:
+            // positive value means wrist is above the shoulder.
+            newWristHeight = shoulder.y - wrist.y;
           }
 
           if (now - lastUpdateRef.current > 80) {
@@ -117,6 +122,7 @@ export function usePoseTracker(
             setIsTracking(true);
             setAngle(Math.round(newAngle));
             setReachValue(Number(newReachValue.toFixed(3)));
+            setWristHeight(Number(newWristHeight.toFixed(3)));
             lastUpdateRef.current = now;
           }
         }
@@ -140,6 +146,7 @@ export function usePoseTracker(
     landmarks,
     angle,
     reachValue,
+    wristHeight,
     isTracking,
   };
 }

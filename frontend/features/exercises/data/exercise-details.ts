@@ -47,10 +47,10 @@ export const exerciseDetails = {
 
   "reach-grasp": {
     slug: "reach-grasp",
-    title: "Reach and Grasp Object",
+    title: "Grasp and Hold Object",
     category: "Functional Hand Task",
     description:
-      "Reach and Grasp helps improve hand control by practising reaching for and holding everyday objects such as a bottle, cup, or ball.",
+      "Grasp and Hold Object helps improve hand control by practising reaching for and holding everyday objects such as a bottle, cup, or ball.",
     level: "Level 2",
     reps: "8 reps",
     duration: "5 minutes",
