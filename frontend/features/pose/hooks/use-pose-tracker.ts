@@ -22,6 +22,8 @@ export function usePoseTracker(
   const [angle, setAngle] = useState(0);
   const [reachValue, setReachValue] = useState(0);
   const [wristHeight, setWristHeight] = useState(0);
+  const [wristX, setWristX] = useState(0);
+
   const [isTracking, setIsTracking] = useState(false);
   const [isModelReady, setIsModelReady] = useState(false);
 
@@ -85,7 +87,9 @@ export function usePoseTracker(
             setAngle(0);
             setReachValue(0);
             setWristHeight(0);
+            setWristX(0);
             setIsTracking(false);
+
             lastUpdateRef.current = now;
           }
         } else {
@@ -99,30 +103,36 @@ export function usePoseTracker(
           let newAngle = 0;
           let newReachValue = 0;
           let newWristHeight = 0;
+          let newWristX = 0;
 
-          // ROM display only
+          // ROM display
           if (hip && shoulder && elbow) {
             newAngle = calculateAngle(hip, shoulder, elbow);
           }
 
-          // Target Touch rep metric
           if (shoulder && wrist) {
+            // Target Touch metric
             const dx = wrist.x - shoulder.x;
             const dy = wrist.y - shoulder.y;
 
             newReachValue = Math.sqrt(dx * dx + dy * dy);
 
-            // Lift and Place rep metric:
-            // positive value means wrist is above the shoulder.
+            // Lift & Place metric
             newWristHeight = shoulder.y - wrist.y;
+
+            // Sideways transport metric
+            newWristX = wrist.x;
           }
 
           if (now - lastUpdateRef.current > 80) {
             setLandmarks(pose);
             setIsTracking(true);
+
             setAngle(Math.round(newAngle));
             setReachValue(Number(newReachValue.toFixed(3)));
             setWristHeight(Number(newWristHeight.toFixed(3)));
+            setWristX(Number(newWristX.toFixed(3)));
+
             lastUpdateRef.current = now;
           }
         }
@@ -147,6 +157,7 @@ export function usePoseTracker(
     angle,
     reachValue,
     wristHeight,
+    wristX,
     isTracking,
   };
 }

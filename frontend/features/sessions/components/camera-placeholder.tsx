@@ -13,6 +13,7 @@ type CameraPlaceholderProps = {
   onAngleChange?: (angle: number) => void;
   onReachChange?: (reachValue: number) => void;
   onWristHeightChange?: (wristHeight: number) => void;
+  onWristXChange?: (wristX: number) => void;
   onClosureChange?: (closureRatio: number) => void;
   fullScreenControls?: ReactNode;
 };
@@ -22,6 +23,7 @@ export function CameraPlaceholder({
   onAngleChange,
   onReachChange,
   onWristHeightChange,
+  onWristXChange,
   onClosureChange,
   fullScreenControls,
 }: CameraPlaceholderProps) {
@@ -43,12 +45,14 @@ export function CameraPlaceholder({
       onAngleChange?.(pose.isTracking ? pose.angle : 0);
       onReachChange?.(pose.isTracking ? pose.reachValue : 0);
       onWristHeightChange?.(pose.isTracking ? pose.wristHeight : 0);
+      onWristXChange?.(pose.isTracking ? pose.wristX : 0);
       onClosureChange?.(hand.isTracking ? hand.closureRatio : 0);
     }
   }, [
     pose.angle,
     pose.reachValue,
     pose.wristHeight,
+    pose.wristX,
     pose.isTracking,
     hand.closureRatio,
     hand.isTracking,
@@ -56,6 +60,7 @@ export function CameraPlaceholder({
     onAngleChange,
     onReachChange,
     onWristHeightChange,
+    onWristXChange,
     onClosureChange,
   ]);
 
@@ -169,6 +174,7 @@ export function CameraPlaceholder({
   const displayAngle = isPaused ? pose.angle : pose.isTracking ? pose.angle : 0;
   const displayReach = pose.isTracking ? pose.reachValue : 0;
   const displayWristHeight = pose.isTracking ? pose.wristHeight : 0;
+  const displayWristX = pose.isTracking ? pose.wristX : 0;
   const displayClosure = hand.isTracking ? hand.closureRatio : 0;
 
   return (
@@ -218,7 +224,8 @@ export function CameraPlaceholder({
       <div className="absolute right-5 top-4 z-30 rounded-full bg-black/40 px-4 py-3 text-white">
         <span className="text-[16px] font-semibold">
           Angle: {displayAngle}° | Reach: {Number(displayReach).toFixed(3)} |
-          Height: {Number(displayWristHeight).toFixed(3)} | Grip:{" "}
+          Height: {Number(displayWristHeight).toFixed(3)} | X:{" "}
+          {Number(displayWristX).toFixed(3)} | Grip:{" "}
           {Number(displayClosure).toFixed(3)}
         </span>
       </div>
