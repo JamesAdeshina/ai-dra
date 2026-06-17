@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Timer } from "lucide-react";
 import { CameraPlaceholder } from "./camera-placeholder";
@@ -17,6 +17,18 @@ import {
   updateHandClosureRepCounter,
   updatePoseRepCounter,
 } from "@/features/pose/utils/rep-counter";
+import {
+  LiftPlaceState,
+  updateLiftPlaceCounter,
+} from "@/features/pose/utils/lift-place-counter";
+import {
+  HandFunctionState,
+  updateHandFunctionCounter,
+} from "@/features/pose/utils/hand-function-counter";
+import {
+  ButtonFasteningState,
+  updateButtonFasteningCounter,
+} from "@/features/pose/utils/button-fastening-counter";
 
 type SessionViewProps = {
   exercise: {
@@ -40,18 +52,12 @@ export function SessionView({ exercise }: SessionViewProps) {
     [exercise.slug]
   );
 
-  const getInitialRepState = useCallback((): RepState => {
-    if (rule.primaryMetric === "hand-closure") return "OPEN";
-    return "RESTING";
-  }, [rule.primaryMetric]);
+  const initialRepState: RepState =
+    rule.primaryMetric === "hand-closure" ? "OPEN" : "RESTING";
 
   const [angle, setAngle] = useState(0);
-  const [reachValue, setReachValue] = useState(0);
-  const [closureRatio, setClosureRatio] = useState(0);
-  const [repState, setRepState] = useState<RepState>(getInitialRepState);
   const [repCount, setRepCount] = useState(0);
   const [feedback, setFeedback] = useState(rule.feedback.start);
-  const [holdStartTime, setHoldStartTime] = useState<number | null>(null);
   const [holdProgress, setHoldProgress] = useState(0);
 
   const [isPaused, setIsPaused] = useState(false);
@@ -60,6 +66,24 @@ export function SessionView({ exercise }: SessionViewProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
+
+  const repStateRef = useRef<RepState>(initialRepState);
+  const liftPlaceStateRef = useRef<LiftPlaceState>("RESTING");
+  const handFunctionStateRef = useRef<HandFunctionState>("OPEN");
+  const buttonFasteningStateRef =
+    useRef<ButtonFasteningState>("RESTING");
+
+  const liftPlaceStartXRef = useRef<number | null>(null);
+  const holdStartTimeRef = useRef<number | null>(null);
+  const buttonHoldStartTimeRef = useRef<number | null>(null);
+  const repCountRef = useRef(0);
+
+  const latestMetricsRef = useRef({
+    wristHeight: 0,
+    wristX: 0,
+    closureRatio: 0,
+    pinchRatio: 1,
+  });
 
   const completeSessionIfNeeded = useCallback(
     (reps: number) => {
@@ -71,87 +95,182 @@ export function SessionView({ exercise }: SessionViewProps) {
     [rule.targetReps]
   );
 
+  const updateRepCount = useCallback((reps: number) => {
+    repCountRef.current = reps;
+    setRepCount((previous) => (previous === reps ? previous : reps));
+  }, []);
+
+  const updateLiftPlaceRepCounter = useCallback(() => {
+    if (isPaused || rule.primaryMetric !== "wrist-height") return;
+
+    const result = updateLiftPlaceCounter({
+      wristHeight: latestMetricsRef.current.wristHeight,
+      wristX: latestMetricsRef.current.wristX,
+      gripValue: latestMetricsRef.current.closureRatio,
+      currentState: liftPlaceStateRef.current,
+      repCount: repCountRef.current,
+      startX: liftPlaceStartXRef.current,
+    });
+
+    liftPlaceStateRef.current = result.state;
+    liftPlaceStartXRef.current = result.startX;
+
+    updateRepCount(result.reps);
+    setFeedback((previous) =>
+      previous === result.feedback ? previous : result.feedback
+    );
+
+    completeSessionIfNeeded(result.reps);
+  }, [completeSessionIfNeeded, isPaused, rule.primaryMetric, updateRepCount]);
+
   const handlePauseToggle = () => {
     setIsPaused((current) => !current);
   };
 
-  const updateWristReachRepCounter = useCallback(
-    (repMetricValue: number) => {
-      if (isPaused) return;
-      if (repMetricValue <= 0) return;
-
-      setRepState((currentState) => {
-        const result = updatePoseRepCounter({
-          value: repMetricValue,
-          currentState,
-          repCount,
-          rule,
-        });
-
-        setRepCount(result.reps);
-        setFeedback(result.feedback);
-        completeSessionIfNeeded(result.reps);
-
-        return result.state;
-      });
-    },
-    [completeSessionIfNeeded, isPaused, repCount, rule]
-  );
-
-  const updateHandClosureCounter = useCallback(
-    (newClosureRatio: number) => {
-      if (isPaused) return;
-      if (newClosureRatio <= 0) return;
-
-      setRepState((currentState) => {
-        const result = updateHandClosureRepCounter({
-          value: newClosureRatio,
-          currentState,
-          repCount,
-          rule,
-          holdStartTime,
-        });
-
-        setRepCount(result.reps);
-        setFeedback(result.feedback);
-        setHoldStartTime(result.holdStartTime ?? null);
-        setHoldProgress(result.holdProgress ?? 0);
-        completeSessionIfNeeded(result.reps);
-
-        return result.state;
-      });
-    },
-    [completeSessionIfNeeded, holdStartTime, isPaused, repCount, rule]
-  );
-
   const handleAngleChange = useCallback((newAngle: number) => {
-    setAngle(newAngle);
+    setAngle((previous) => (previous === newAngle ? previous : newAngle));
   }, []);
 
   const handleReachChange = useCallback(
     (newReachValue: number) => {
+      if (isPaused || rule.primaryMetric !== "wrist-reach") return;
+      if (newReachValue <= 0) return;
+
+      const result = updatePoseRepCounter({
+        value: newReachValue,
+        currentState: repStateRef.current,
+        repCount: repCountRef.current,
+        rule,
+      });
+
+      repStateRef.current = result.state;
+
+      updateRepCount(result.reps);
+      setFeedback((previous) =>
+        previous === result.feedback ? previous : result.feedback
+      );
+
+      completeSessionIfNeeded(result.reps);
+    },
+    [completeSessionIfNeeded, isPaused, rule, updateRepCount]
+  );
+
+  const handleWristHeightChange = useCallback(
+    (newWristHeight: number) => {
       if (isPaused) return;
 
-      setReachValue(newReachValue);
-
-      if (rule.primaryMetric === "wrist-reach") {
-        updateWristReachRepCounter(newReachValue);
-      }
+      latestMetricsRef.current.wristHeight = newWristHeight;
+      updateLiftPlaceRepCounter();
     },
-    [isPaused, rule.primaryMetric, updateWristReachRepCounter]
+    [isPaused, updateLiftPlaceRepCounter]
+  );
+
+  const handleWristXChange = useCallback(
+    (newWristX: number) => {
+      if (isPaused) return;
+
+      latestMetricsRef.current.wristX = newWristX;
+      updateLiftPlaceRepCounter();
+    },
+    [isPaused, updateLiftPlaceRepCounter]
+  );
+
+  const handlePinchChange = useCallback(
+    (newPinchRatio: number) => {
+      if (isPaused) return;
+
+      latestMetricsRef.current.pinchRatio = newPinchRatio;
+
+      if (rule.primaryMetric !== "pinch-zone") return;
+
+      const result = updateButtonFasteningCounter({
+        pinchRatio: newPinchRatio,
+        currentState: buttonFasteningStateRef.current,
+        repCount: repCountRef.current,
+        holdStartTime: buttonHoldStartTimeRef.current,
+      });
+
+      buttonFasteningStateRef.current = result.state;
+      buttonHoldStartTimeRef.current = result.holdStartTime;
+
+      updateRepCount(result.reps);
+
+      setFeedback((previous) =>
+        previous === result.feedback ? previous : result.feedback
+      );
+
+      setHoldProgress((previous) =>
+        previous === result.holdProgress ? previous : result.holdProgress
+      );
+
+      completeSessionIfNeeded(result.reps);
+    },
+    [completeSessionIfNeeded, isPaused, rule.primaryMetric, updateRepCount]
   );
 
   const handleClosureChange = useCallback(
     (newClosureRatio: number) => {
       if (isPaused) return;
 
-      setClosureRatio(newClosureRatio);
+      latestMetricsRef.current.closureRatio = newClosureRatio;
 
-      if (rule.primaryMetric === "hand-closure") {
-        updateHandClosureCounter(newClosureRatio);
+      if (rule.primaryMetric === "wrist-height") {
+        updateLiftPlaceRepCounter();
+        return;
       }
+
+      if (rule.primaryMetric === "hand-open-close") {
+        const result = updateHandFunctionCounter({
+          closureRatio: newClosureRatio,
+          currentState: handFunctionStateRef.current,
+          repCount: repCountRef.current,
+        });
+
+        handFunctionStateRef.current = result.state;
+
+        updateRepCount(result.reps);
+        setFeedback((previous) =>
+          previous === result.feedback ? previous : result.feedback
+        );
+
+        completeSessionIfNeeded(result.reps);
+        return;
+      }
+
+      if (rule.primaryMetric !== "hand-closure") return;
+      if (newClosureRatio <= 0) return;
+
+      const result = updateHandClosureRepCounter({
+        value: newClosureRatio,
+        currentState: repStateRef.current,
+        repCount: repCountRef.current,
+        rule,
+        holdStartTime: holdStartTimeRef.current,
+      });
+
+      repStateRef.current = result.state;
+      holdStartTimeRef.current = result.holdStartTime ?? null;
+
+      updateRepCount(result.reps);
+      setFeedback((previous) =>
+        previous === result.feedback ? previous : result.feedback
+      );
+
+      setHoldProgress((previous) =>
+        previous === (result.holdProgress ?? 0)
+          ? previous
+          : result.holdProgress ?? 0
+      );
+
+      completeSessionIfNeeded(result.reps);
     },
-    [isPaused, rule.primaryMetric, updateHandClosureCounter]
+    [
+      completeSessionIfNeeded,
+      isPaused,
+      rule,
+      updateLiftPlaceRepCounter,
+      updateRepCount,
+    ]
   );
 
   const exitFullscreenIfNeeded = async () => {
@@ -219,15 +338,27 @@ export function SessionView({ exercise }: SessionViewProps) {
   }, [isPaused, showEndModal, showEndConfirmModal, showDemoModal]);
 
   useEffect(() => {
-    setRepState(getInitialRepState());
+    repStateRef.current = initialRepState;
+    liftPlaceStateRef.current = "RESTING";
+    handFunctionStateRef.current = "OPEN";
+    buttonFasteningStateRef.current = "RESTING";
+    liftPlaceStartXRef.current = null;
+    holdStartTimeRef.current = null;
+    buttonHoldStartTimeRef.current = null;
+    repCountRef.current = 0;
+
+    latestMetricsRef.current = {
+      wristHeight: 0,
+      wristX: 0,
+      closureRatio: 0,
+      pinchRatio: 1,
+    };
+
     setRepCount(0);
     setFeedback(rule.feedback.start);
     setAngle(0);
-    setReachValue(0);
-    setClosureRatio(0);
-    setHoldStartTime(null);
     setHoldProgress(0);
-  }, [exercise.slug, getInitialRepState, rule.feedback.start]);
+  }, [exercise.slug, initialRepState, rule.feedback.start]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -311,7 +442,10 @@ export function SessionView({ exercise }: SessionViewProps) {
             isPaused={isPaused}
             onAngleChange={handleAngleChange}
             onReachChange={handleReachChange}
+            onWristHeightChange={handleWristHeightChange}
+            onWristXChange={handleWristXChange}
             onClosureChange={handleClosureChange}
+            onPinchChange={handlePinchChange}
             fullScreenControls={
               <SessionControls
                 isPaused={isPaused}

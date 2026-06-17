@@ -15,6 +15,7 @@ type CameraPlaceholderProps = {
   onWristHeightChange?: (wristHeight: number) => void;
   onWristXChange?: (wristX: number) => void;
   onClosureChange?: (closureRatio: number) => void;
+  onPinchChange?: (pinchRatio: number) => void;
   fullScreenControls?: ReactNode;
 };
 
@@ -25,6 +26,7 @@ export function CameraPlaceholder({
   onWristHeightChange,
   onWristXChange,
   onClosureChange,
+  onPinchChange,
   fullScreenControls,
 }: CameraPlaceholderProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -35,19 +37,60 @@ export function CameraPlaceholder({
   const [cameraError, setCameraError] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
 
+  const callbacksRef = useRef({
+    onAngleChange,
+    onReachChange,
+    onWristHeightChange,
+    onWristXChange,
+    onClosureChange,
+    onPinchChange,
+  });
+
+  useEffect(() => {
+    callbacksRef.current = {
+      onAngleChange,
+      onReachChange,
+      onWristHeightChange,
+      onWristXChange,
+      onClosureChange,
+      onPinchChange,
+    };
+  }, [
+    onAngleChange,
+    onReachChange,
+    onWristHeightChange,
+    onWristXChange,
+    onClosureChange,
+    onPinchChange,
+  ]);
+
   const pose = usePoseTracker(videoRef);
   const hand = useHandTracker(videoRef);
 
   const isTracking = pose.isTracking || hand.isTracking;
 
   useEffect(() => {
-    if (!isPaused) {
-      onAngleChange?.(pose.isTracking ? pose.angle : 0);
-      onReachChange?.(pose.isTracking ? pose.reachValue : 0);
-      onWristHeightChange?.(pose.isTracking ? pose.wristHeight : 0);
-      onWristXChange?.(pose.isTracking ? pose.wristX : 0);
-      onClosureChange?.(hand.isTracking ? hand.closureRatio : 0);
-    }
+    if (isPaused) return;
+
+    callbacksRef.current.onAngleChange?.(pose.isTracking ? pose.angle : 0);
+
+    callbacksRef.current.onReachChange?.(
+      pose.isTracking ? pose.reachValue : 0
+    );
+
+    callbacksRef.current.onWristHeightChange?.(
+      pose.isTracking ? pose.wristHeight : 0
+    );
+
+    callbacksRef.current.onWristXChange?.(pose.isTracking ? pose.wristX : 0);
+
+    callbacksRef.current.onClosureChange?.(
+      hand.isTracking ? hand.closureRatio : 0
+    );
+
+    callbacksRef.current.onPinchChange?.(
+      hand.isTracking ? hand.pinchRatio : 1
+    );
   }, [
     pose.angle,
     pose.reachValue,
@@ -55,13 +98,9 @@ export function CameraPlaceholder({
     pose.wristX,
     pose.isTracking,
     hand.closureRatio,
+    hand.pinchRatio,
     hand.isTracking,
     isPaused,
-    onAngleChange,
-    onReachChange,
-    onWristHeightChange,
-    onWristXChange,
-    onClosureChange,
   ]);
 
   useEffect(() => {
@@ -176,6 +215,7 @@ export function CameraPlaceholder({
   const displayWristHeight = pose.isTracking ? pose.wristHeight : 0;
   const displayWristX = pose.isTracking ? pose.wristX : 0;
   const displayClosure = hand.isTracking ? hand.closureRatio : 0;
+  const displayPinch = hand.isTracking ? hand.pinchRatio : 1;
 
   return (
     <div
@@ -226,7 +266,8 @@ export function CameraPlaceholder({
           Angle: {displayAngle}° | Reach: {Number(displayReach).toFixed(3)} |
           Height: {Number(displayWristHeight).toFixed(3)} | X:{" "}
           {Number(displayWristX).toFixed(3)} | Grip:{" "}
-          {Number(displayClosure).toFixed(3)}
+          {Number(displayClosure).toFixed(3)} | Pinch:{" "}
+          {Number(displayPinch).toFixed(3)}
         </span>
       </div>
 

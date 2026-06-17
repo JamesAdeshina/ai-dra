@@ -14,6 +14,7 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
 
   const [landmarks, setLandmarks] = useState<NormalizedLandmark[]>([]);
   const [closureRatio, setClosureRatio] = useState(0);
+  const [pinchRatio, setPinchRatio] = useState(1);
   const [isTracking, setIsTracking] = useState(false);
   const [isModelReady, setIsModelReady] = useState(false);
 
@@ -73,15 +74,18 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
           if (now - lastUpdateRef.current > 120) {
             setLandmarks([]);
             setClosureRatio(0);
+            setPinchRatio(1);
             setIsTracking(false);
             lastUpdateRef.current = now;
           }
         } else {
-          const ratio = calculateClosureRatio(hand);
+          const newClosureRatio = calculateClosureRatio(hand);
+          const newPinchRatio = calculatePinchRatio(hand);
 
           if (now - lastUpdateRef.current > 80) {
             setLandmarks(hand);
-            setClosureRatio(ratio);
+            setClosureRatio(newClosureRatio);
+            setPinchRatio(newPinchRatio);
             setIsTracking(true);
             lastUpdateRef.current = now;
           }
@@ -105,6 +109,7 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
   return {
     landmarks,
     closureRatio,
+    pinchRatio,
     isTracking,
   };
 }
@@ -138,6 +143,26 @@ function calculateClosureRatio(landmarks: NormalizedLandmark[]): number {
   return Number(average.toFixed(3));
 }
 
+function calculatePinchRatio(landmarks: NormalizedLandmark[]): number {
+  const thumbTip = landmarks[4];
+  const indexTip = landmarks[8];
+  const wrist = landmarks[0];
+  const middleMCP = landmarks[9];
+
+  if (!thumbTip || !indexTip || !wrist || !middleMCP) return 1;
+
+  const handSize = distance(wrist, middleMCP);
+  if (handSize === 0) return 1;
+
+  const pinchDistance = distance(thumbTip, indexTip);
+
+  return Number((pinchDistance / handSize).toFixed(3));
+}
+
 function distance(a: NormalizedLandmark, b: NormalizedLandmark) {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+  return Math.sqrt(
+    (a.x - b.x) ** 2 +
+      (a.y - b.y) ** 2 +
+      ((a.z ?? 0) - (b.z ?? 0)) ** 2
+  );
 }
