@@ -104,6 +104,9 @@ export const exerciseRules: Record<string, ExerciseRule> = {
     completeThreshold: 0,
     returnThreshold: 0,
 
+    gripThreshold: 0.6,
+    releaseThreshold: 0.2,
+
     feedback: {
       start: "Start with your hand relaxed.",
       progress: "Open your fingers fully.",

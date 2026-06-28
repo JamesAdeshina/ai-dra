@@ -7,11 +7,23 @@ import {
   NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 
+export type TrackedHand = {
+  landmarks: NormalizedLandmark[];
+  handedness: "Left" | "Right" | "Unknown";
+  closureRatio: number;
+  pinchRatio: number;
+  wristX: number;
+  wristY: number;
+};
+
 export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef(0);
 
+  const [hands, setHands] = useState<TrackedHand[]>([]);
+
+  // Kept for backward compatibility with existing exercises
   const [landmarks, setLandmarks] = useState<NormalizedLandmark[]>([]);
   const [closureRatio, setClosureRatio] = useState(0);
   const [pinchRatio, setPinchRatio] = useState(1);
@@ -22,24 +34,33 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
     let isMounted = true;
 
     async function setupHandLandmarker() {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-      );
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        );
 
-      const handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task",
-          delegate: "GPU",
-        },
-        runningMode: "VIDEO",
-        numHands: 1,
-      });
+        const handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath:
+              "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task",
+            delegate: "GPU",
+          },
+          runningMode: "VIDEO",
 
-      if (!isMounted) return;
+          // Changed from 1 to 2
+          numHands: 2,
+        });
 
-      handLandmarkerRef.current = handLandmarker;
-      setIsModelReady(true);
+        if (!isMounted) {
+          handLandmarker.close();
+          return;
+        }
+
+        handLandmarkerRef.current = handLandmarker;
+        setIsModelReady(true);
+      } catch (error) {
+        console.error("Failed to initialise Hand Landmarker:", error);
+      }
     }
 
     setupHandLandmarker();
@@ -47,11 +68,12 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
     return () => {
       isMounted = false;
 
-      if (animationFrameRef.current) {
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
 
       handLandmarkerRef.current?.close();
+      handLandmarkerRef.current = null;
     };
   }, []);
 
@@ -63,32 +85,55 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
       if (
         video &&
         handLandmarker &&
-        video.readyState >= 2 &&
-        video.videoWidth > 0
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        video.videoWidth > 0 &&
+        video.videoHeight > 0
       ) {
-        const result = handLandmarker.detectForVideo(video, performance.now());
-        const hand = result.landmarks?.[0] ?? [];
         const now = performance.now();
+        const result = handLandmarker.detectForVideo(video, now);
 
-        if (hand.length === 0) {
-          if (now - lastUpdateRef.current > 120) {
+        const detectedHands: TrackedHand[] = (result.landmarks ?? []).map(
+          (handLandmarks, index) => {
+            const handednessCategory =
+              result.handedness?.[index]?.[0]?.categoryName;
+
+            const handedness =
+              handednessCategory === "Left" || handednessCategory === "Right"
+                ? handednessCategory
+                : "Unknown";
+
+            return {
+              landmarks: handLandmarks,
+              handedness,
+              closureRatio: calculateClosureRatio(handLandmarks),
+              pinchRatio: calculatePinchRatio(handLandmarks),
+              wristX: handLandmarks[0]?.x ?? 0,
+              wristY: handLandmarks[0]?.y ?? 0,
+            };
+          }
+        );
+
+        if (detectedHands.length === 0) {
+          if (now - lastUpdateRef.current >= 120) {
+            setHands([]);
             setLandmarks([]);
             setClosureRatio(0);
             setPinchRatio(1);
             setIsTracking(false);
             lastUpdateRef.current = now;
           }
-        } else {
-          const newClosureRatio = calculateClosureRatio(hand);
-          const newPinchRatio = calculatePinchRatio(hand);
+        } else if (now - lastUpdateRef.current >= 80) {
+          const primaryHand = selectPrimaryHand(detectedHands);
 
-          if (now - lastUpdateRef.current > 80) {
-            setLandmarks(hand);
-            setClosureRatio(newClosureRatio);
-            setPinchRatio(newPinchRatio);
-            setIsTracking(true);
-            lastUpdateRef.current = now;
-          }
+          setHands(detectedHands);
+
+          // Existing exercises continue to use the primary hand
+          setLandmarks(primaryHand.landmarks);
+          setClosureRatio(primaryHand.closureRatio);
+          setPinchRatio(primaryHand.pinchRatio);
+          setIsTracking(true);
+
+          lastUpdateRef.current = now;
         }
       }
 
@@ -100,13 +145,17 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
     }
 
     return () => {
-      if (animationFrameRef.current) {
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, [isModelReady, videoRef]);
 
   return {
+    // New two-hand output
+    hands,
+
+    // Existing output preserved
     landmarks,
     closureRatio,
     pinchRatio,
@@ -114,14 +163,26 @@ export function useHandTracker(videoRef: RefObject<HTMLVideoElement | null>) {
   };
 }
 
-function calculateClosureRatio(landmarks: NormalizedLandmark[]): number {
+function selectPrimaryHand(hands: TrackedHand[]): TrackedHand {
+  if (hands.length === 1) {
+    return hands[0];
+  }
+
+  // Prefer the hand showing the strongest pinch.
+  // This keeps Button Fastening focused on the active hand.
+  return [...hands].sort((a, b) => a.pinchRatio - b.pinchRatio)[0];
+}
+
+function calculateClosureRatio(
+  landmarks: NormalizedLandmark[]
+): number {
   const wrist = landmarks[0];
   const middleMCP = landmarks[9];
 
   if (!wrist || !middleMCP) return 0;
 
   const handSize = distance(wrist, middleMCP);
-  if (handSize === 0) return 0;
+  if (handSize <= 0) return 0;
 
   const fingers = [
     { tip: landmarks[8], mcp: landmarks[5] },
@@ -134,35 +195,48 @@ function calculateClosureRatio(landmarks: NormalizedLandmark[]): number {
     if (!tip || !mcp) return 0;
 
     const tipToMCP = distance(tip, mcp);
-    return Math.max(0, Math.min(1, 1 - tipToMCP / handSize));
+
+    return clamp(1 - tipToMCP / handSize, 0, 1);
   });
 
   const average =
-    closures.reduce((total, value) => total + value, 0) / closures.length;
+    closures.reduce((total, value) => total + value, 0) /
+    closures.length;
 
   return Number(average.toFixed(3));
 }
 
-function calculatePinchRatio(landmarks: NormalizedLandmark[]): number {
+function calculatePinchRatio(
+  landmarks: NormalizedLandmark[]
+): number {
   const thumbTip = landmarks[4];
   const indexTip = landmarks[8];
   const wrist = landmarks[0];
   const middleMCP = landmarks[9];
 
-  if (!thumbTip || !indexTip || !wrist || !middleMCP) return 1;
+  if (!thumbTip || !indexTip || !wrist || !middleMCP) {
+    return 1;
+  }
 
   const handSize = distance(wrist, middleMCP);
-  if (handSize === 0) return 1;
+  if (handSize <= 0) return 1;
 
   const pinchDistance = distance(thumbTip, indexTip);
 
   return Number((pinchDistance / handSize).toFixed(3));
 }
 
-function distance(a: NormalizedLandmark, b: NormalizedLandmark) {
+function distance(
+  a: NormalizedLandmark,
+  b: NormalizedLandmark
+): number {
   return Math.sqrt(
     (a.x - b.x) ** 2 +
       (a.y - b.y) ** 2 +
       ((a.z ?? 0) - (b.z ?? 0)) ** 2
   );
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

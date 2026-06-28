@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Video } from "lucide-react";
 import { HandOverlay } from "@/features/pose/components/hand-overlay";
 import { PoseOverlay } from "@/features/pose/components/pose-overlay";
-import { useHandTracker } from "@/features/pose/hooks/use-hand-tracker";
+import {
+  TrackedHand,
+  useHandTracker,
+} from "@/features/pose/hooks/use-hand-tracker";
 import { usePoseTracker } from "@/features/pose/hooks/use-pose-tracker";
 
 type CameraPlaceholderProps = {
@@ -16,7 +19,18 @@ type CameraPlaceholderProps = {
   onWristXChange?: (wristX: number) => void;
   onClosureChange?: (closureRatio: number) => void;
   onPinchChange?: (pinchRatio: number) => void;
+  onHandsChange?: (hands: TrackedHand[]) => void;
   fullScreenControls?: ReactNode;
+};
+
+type ReportedValues = {
+  angle: number | null;
+  reachValue: number | null;
+  wristHeight: number | null;
+  wristX: number | null;
+  closureRatio: number | null;
+  pinchRatio: number | null;
+  hands: TrackedHand[] | null;
 };
 
 export function CameraPlaceholder({
@@ -27,6 +41,7 @@ export function CameraPlaceholder({
   onWristXChange,
   onClosureChange,
   onPinchChange,
+  onHandsChange,
   fullScreenControls,
 }: CameraPlaceholderProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -44,6 +59,17 @@ export function CameraPlaceholder({
     onWristXChange,
     onClosureChange,
     onPinchChange,
+    onHandsChange,
+  });
+
+  const lastReportedRef = useRef<ReportedValues>({
+    angle: null,
+    reachValue: null,
+    wristHeight: null,
+    wristX: null,
+    closureRatio: null,
+    pinchRatio: null,
+    hands: null,
   });
 
   useEffect(() => {
@@ -54,6 +80,7 @@ export function CameraPlaceholder({
       onWristXChange,
       onClosureChange,
       onPinchChange,
+      onHandsChange,
     };
   }, [
     onAngleChange,
@@ -62,6 +89,7 @@ export function CameraPlaceholder({
     onWristXChange,
     onClosureChange,
     onPinchChange,
+    onHandsChange,
   ]);
 
   const pose = usePoseTracker(videoRef);
@@ -72,25 +100,50 @@ export function CameraPlaceholder({
   useEffect(() => {
     if (isPaused) return;
 
-    callbacksRef.current.onAngleChange?.(pose.isTracking ? pose.angle : 0);
+    const angle = pose.isTracking ? pose.angle : 0;
+    const reachValue = pose.isTracking ? pose.reachValue : 0;
+    const wristHeight = pose.isTracking ? pose.wristHeight : 0;
+    const wristX = pose.isTracking ? pose.wristX : 0;
+    const closureRatio = hand.isTracking ? hand.closureRatio : 0;
+    const pinchRatio = hand.isTracking ? hand.pinchRatio : 1;
+    const hands = hand.isTracking ? hand.hands : [];
 
-    callbacksRef.current.onReachChange?.(
-      pose.isTracking ? pose.reachValue : 0
-    );
+    const previous = lastReportedRef.current;
 
-    callbacksRef.current.onWristHeightChange?.(
-      pose.isTracking ? pose.wristHeight : 0
-    );
+    if (previous.angle !== angle) {
+      callbacksRef.current.onAngleChange?.(angle);
+      previous.angle = angle;
+    }
 
-    callbacksRef.current.onWristXChange?.(pose.isTracking ? pose.wristX : 0);
+    if (previous.reachValue !== reachValue) {
+      callbacksRef.current.onReachChange?.(reachValue);
+      previous.reachValue = reachValue;
+    }
 
-    callbacksRef.current.onClosureChange?.(
-      hand.isTracking ? hand.closureRatio : 0
-    );
+    if (previous.wristHeight !== wristHeight) {
+      callbacksRef.current.onWristHeightChange?.(wristHeight);
+      previous.wristHeight = wristHeight;
+    }
 
-    callbacksRef.current.onPinchChange?.(
-      hand.isTracking ? hand.pinchRatio : 1
-    );
+    if (previous.wristX !== wristX) {
+      callbacksRef.current.onWristXChange?.(wristX);
+      previous.wristX = wristX;
+    }
+
+    if (previous.closureRatio !== closureRatio) {
+      callbacksRef.current.onClosureChange?.(closureRatio);
+      previous.closureRatio = closureRatio;
+    }
+
+    if (previous.pinchRatio !== pinchRatio) {
+      callbacksRef.current.onPinchChange?.(pinchRatio);
+      previous.pinchRatio = pinchRatio;
+    }
+
+    if (previous.hands !== hands) {
+      callbacksRef.current.onHandsChange?.(hands);
+      previous.hands = hands;
+    }
   }, [
     pose.angle,
     pose.reachValue,
@@ -99,20 +152,31 @@ export function CameraPlaceholder({
     pose.isTracking,
     hand.closureRatio,
     hand.pinchRatio,
+    hand.hands,
     hand.isTracking,
     isPaused,
   ]);
 
   useEffect(() => {
-    let retryTimer: NodeJS.Timeout | null = null;
+    let retryTimer: ReturnType<typeof setInterval> | null = null;
+    let isMounted = true;
 
     const stopCamera = () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
-      setHasCamera(false);
+
+      if (isMounted) {
+        setHasCamera(false);
+      }
     };
 
     const startCamera = async () => {
+      const currentTrack = streamRef.current?.getVideoTracks()[0];
+
+      if (currentTrack?.readyState === "live") {
+        return;
+      }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -121,10 +185,18 @@ export function CameraPlaceholder({
           audio: false,
         });
 
+        if (!isMounted) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        stopCamera();
         streamRef.current = stream;
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+
           setHasCamera(true);
           setCameraError("");
         }
@@ -133,22 +205,31 @@ export function CameraPlaceholder({
 
         if (videoTrack) {
           videoTrack.onended = () => {
+            if (!isMounted) return;
+
             setHasCamera(false);
             setCameraError("Camera stopped. Reconnecting...");
           };
 
           videoTrack.onmute = () => {
+            if (!isMounted) return;
+
             setHasCamera(false);
             setCameraError("Camera paused. Waiting for camera...");
           };
 
           videoTrack.onunmute = () => {
+            if (!isMounted) return;
+
             setHasCamera(true);
             setCameraError("");
           };
         }
       } catch (error) {
-        console.error(error);
+        console.error("Unable to start camera:", error);
+
+        if (!isMounted) return;
+
         setHasCamera(false);
         setCameraError(
           "Camera access is blocked. Please allow camera permission to start the session."
@@ -159,8 +240,7 @@ export function CameraPlaceholder({
     startCamera();
 
     retryTimer = setInterval(() => {
-      const stream = streamRef.current;
-      const track = stream?.getVideoTracks()[0];
+      const track = streamRef.current?.getVideoTracks()[0];
 
       if (!track || track.readyState === "ended") {
         startCamera();
@@ -168,7 +248,12 @@ export function CameraPlaceholder({
     }, 3000);
 
     return () => {
-      if (retryTimer) clearInterval(retryTimer);
+      isMounted = false;
+
+      if (retryTimer) {
+        clearInterval(retryTimer);
+      }
+
       stopCamera();
     };
   }, []);
@@ -195,7 +280,7 @@ export function CameraPlaceholder({
         await document.exitFullscreen();
       }
     } catch (error) {
-      console.error(error);
+      console.error("Unable to change fullscreen state:", error);
     }
   };
 
@@ -208,9 +293,11 @@ export function CameraPlaceholder({
         : "No Body / Hand Detected";
 
   const statusColor =
-    hasCamera && !isPaused && isTracking ? "bg-[#54D060]" : "bg-[#FF4D4F]";
+    hasCamera && !isPaused && isTracking
+      ? "bg-[#54D060]"
+      : "bg-[#FF4D4F]";
 
-  const displayAngle = isPaused ? pose.angle : pose.isTracking ? pose.angle : 0;
+  const displayAngle = pose.isTracking ? pose.angle : 0;
   const displayReach = pose.isTracking ? pose.reachValue : 0;
   const displayWristHeight = pose.isTracking ? pose.wristHeight : 0;
   const displayWristX = pose.isTracking ? pose.wristX : 0;
@@ -230,8 +317,16 @@ export function CameraPlaceholder({
         className="h-full w-full object-cover"
       />
 
-      {pose.landmarks.length > 0 && <PoseOverlay landmarks={pose.landmarks} />}
-      {hand.landmarks.length > 0 && <HandOverlay landmarks={hand.landmarks} />}
+      {pose.landmarks.length > 0 && (
+        <PoseOverlay landmarks={pose.landmarks} />
+      )}
+
+      {hand.hands.map((trackedHand, index) => (
+        <HandOverlay
+          key={`${trackedHand.handedness}-${index}`}
+          landmarks={trackedHand.landmarks}
+        />
+      ))}
 
       {isPaused && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 backdrop-blur-[2px]">
@@ -239,6 +334,7 @@ export function CameraPlaceholder({
             <p className="text-[24px] font-semibold text-[#1E1E1E]">
               Session Paused
             </p>
+
             <p className="mt-2 text-[16px] text-[#757575]">
               Tap Resume to continue
             </p>
@@ -256,6 +352,7 @@ export function CameraPlaceholder({
 
       <div className="absolute left-5 top-4 z-30 flex items-center gap-2 rounded-full bg-black/40 px-4 py-3">
         <span className={`h-[18px] w-[18px] rounded-full ${statusColor}`} />
+
         <span className="text-[16px] font-semibold text-white">
           {statusLabel}
         </span>
@@ -263,16 +360,17 @@ export function CameraPlaceholder({
 
       <div className="absolute right-5 top-4 z-30 rounded-full bg-black/40 px-4 py-3 text-white">
         <span className="text-[16px] font-semibold">
-          Angle: {displayAngle}° | Reach: {Number(displayReach).toFixed(3)} |
+          Angle: {displayAngle} | Reach: {Number(displayReach).toFixed(3)} |
           Height: {Number(displayWristHeight).toFixed(3)} | X:{" "}
           {Number(displayWristX).toFixed(3)} | Grip:{" "}
           {Number(displayClosure).toFixed(3)} | Pinch:{" "}
-          {Number(displayPinch).toFixed(3)}
+          {Number(displayPinch).toFixed(3)} | Hands: {hand.hands.length}
         </span>
       </div>
 
       <div className="absolute bottom-4 left-4 z-30 flex items-start gap-2 rounded-[24px] bg-black/40 px-4 py-3">
         <Video size={18} className="text-white" />
+
         <div>
           <p className="text-[16px] font-semibold text-white">Camera</p>
           <p className="text-[13px] font-medium text-[#7875FB]">Front View</p>
