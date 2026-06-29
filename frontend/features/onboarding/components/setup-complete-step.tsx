@@ -1,8 +1,17 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function SetupCompleteStep() {
+  const router = useRouter();
+
+  const handleContinue = () => {
+    router.replace("/dashboard");
+    router.refresh();
+  };
+
   return (
     <div className="text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#00A651] text-white">
@@ -18,11 +27,13 @@ export function SetupCompleteStep() {
         your rehabilitation experience.
       </p>
 
-      <Link href="/dashboard">
-        <Button className="mt-10 h-14 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]">
-          Continue to Dashboard
-        </Button>
-      </Link>
+      <Button
+        type="button"
+        onClick={handleContinue}
+        className="mt-10 h-14 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]"
+      >
+        Continue to Dashboard
+      </Button>
     </div>
   );
 }

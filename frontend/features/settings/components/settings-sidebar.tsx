@@ -4,11 +4,13 @@ import {
   Info,
   Shield,
   User,
+  LockKeyhole,
   Users,
 } from "lucide-react";
 
 export type SettingsTab =
   | "Personal Information"
+  | "Change Password"
   | "Accessibility"
   | "Preferences"
   | "Help & Support"
@@ -16,6 +18,7 @@ export type SettingsTab =
 
 const items = [
   { label: "Personal Information", icon: User },
+  { label: "Change Password", icon: LockKeyhole },
   { label: "Accessibility", icon: Shield },
   { label: "Preferences", icon: Users },
   { label: "Help & Support", icon: HelpCircle },

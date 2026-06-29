@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -12,12 +16,72 @@ import {
 
 import { SignOutModal } from "./sign-out-modal";
 
-export function ProfileDropdown() {
+type ProfileDropdownProps = {
+  onClose: () => void;
+};
+
+export function ProfileDropdown({
+  onClose,
+}: ProfileDropdownProps) {
   const [showModal, setShowModal] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (
+      event: MouseEvent
+    ) => {
+      if (showModal) return;
+
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(
+          event.target as Node
+        )
+      ) {
+        onClose();
+      }
+    };
+
+    const handleEscape = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key === "Escape" &&
+        !showModal
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, [onClose, showModal]);
 
   return (
     <>
-      <div className="absolute right-0 top-[72px] z-40 w-[330px] rounded-[32px] bg-white p-5 shadow-xl">
+      <div
+        ref={dropdownRef}
+        className="absolute right-0 top-[72px] z-40 w-[330px] rounded-[32px] bg-white p-5 shadow-xl"
+      >
         <h3 className="mb-3 text-[20px] font-semibold">
           Profile settings
         </h3>
@@ -25,31 +89,33 @@ export function ProfileDropdown() {
         <div className="space-y-6 border-t pt-6">
           <Link
             href="/settings?tab=profile"
+            onClick={onClose}
             className="flex items-center gap-4"
           >
             <User />
-            <span className="">View Profile</span>
+            <span>View Profile</span>
           </Link>
 
           <Link
             href="/settings?tab=personal"
+            onClick={onClose}
             className="flex items-center gap-4"
           >
             <Settings />
-            <span className="">Settings</span>
+            <span>Settings</span>
           </Link>
 
           <Link
-            href="settings?tab=support"
+            href="/settings?tab=support"
+            onClick={onClose}
             className="flex items-center gap-4"
           >
             <HelpCircle />
-            <span className="">
-              Help & Support
-            </span>
+            <span>Help & Support</span>
           </Link>
 
           <button
+            type="button"
             onClick={() => setShowModal(true)}
             className="mt-6 flex w-full items-center justify-between rounded-full bg-[#F5F5F5] p-3"
           >
@@ -70,7 +136,10 @@ export function ProfileDropdown() {
 
       <SignOutModal
         open={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          onClose();
+        }}
       />
     </>
   );

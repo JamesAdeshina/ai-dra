@@ -47,15 +47,26 @@ export async function updateSession(request: NextRequest) {
   );
 
   const {
-    data: { claims },
+    data: claimsData,
+    error: claimsError,
   } = await supabase.auth.getClaims();
+
+  if (claimsError) {
+    console.error(
+      "Failed to read Supabase authentication claims:",
+      claimsError
+    );
+  }
+
+  const userId =
+    claimsData &&
+    typeof claimsData.claims?.sub === "string"
+      ? claimsData.claims.sub
+      : null;
 
   return {
     response,
     supabase,
-    userId:
-      typeof claims?.sub === "string"
-        ? claims.sub
-        : null,
+    userId,
   };
 }
