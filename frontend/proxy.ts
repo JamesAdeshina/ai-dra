@@ -7,6 +7,16 @@ const publicRoutes = new Set([
   "/auth/register",
   "/auth/forgot-password",
   "/auth/check-email",
+  "/auth/callback",
+  "/auth/reset-password",
+]);
+
+// Routes under /auth/ that should NOT bounce an authenticated
+// user back to the dashboard. The password recovery flow needs
+// the user to be authenticated (via the recovery session) while
+// still on this route so they can submit a new password.
+const authRouteExemptions = new Set([
+  "/auth/reset-password",
 ]);
 
 function isPublicRoute(pathname: string) {
@@ -14,7 +24,10 @@ function isPublicRoute(pathname: string) {
 }
 
 function isAuthRoute(pathname: string) {
-  return pathname.startsWith("/auth/");
+  return (
+    pathname.startsWith("/auth/") &&
+    !authRouteExemptions.has(pathname)
+  );
 }
 
 export async function proxy(request: NextRequest) {

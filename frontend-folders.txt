@@ -1,0 +1,103 @@
+frontend
+|-- app
+|   |-- api
+|   |   |-- exercise-repetitions
+|   |   |-- exercise-sessions
+|   |   |   `-- [sessionId]
+|   |   |-- onboarding
+|   |   `-- profile
+|   |       `-- avatar
+|   |-- auth
+|   |   |-- callback
+|   |   |-- check-email
+|   |   |-- forgot-password
+|   |   |-- login
+|   |   |-- register
+|   |   `-- reset-password
+|   |-- carer
+|   |   |-- dashboard
+|   |   |-- invitations
+|   |   |-- notifications
+|   |   |-- settings
+|   |   `-- survivors
+|   |       `-- [survivorId]
+|   |           |-- exercises
+|   |           |-- notes
+|   |           `-- sessions
+|   |-- dashboard
+|   |-- exercises
+|   |   `-- [exerciseId]
+|   |       |-- demo
+|   |       `-- start
+|   |-- history
+|   |-- onboarding
+|   |-- progress
+|   |-- reminders
+|   |-- session
+|   `-- settings
+|-- components
+|   |-- layout
+|   |-- navigation
+|   |-- shared
+|   `-- ui
+|-- features
+|   |-- auth
+|   |   `-- components
+|   |-- carer
+|   |   |-- components
+|   |   |   |-- dashboard
+|   |   |   |-- layout
+|   |   |   |-- notifications
+|   |   |   |-- settings
+|   |   |   `-- survivors
+|   |   |-- data
+|   |   `-- types
+|   |-- dashboard
+|   |   |-- components
+|   |   |-- data
+|   |   `-- types
+|   |-- exercises
+|   |   |-- components
+|   |   |   |-- demo
+|   |   |   `-- details
+|   |   |-- data
+|   |   `-- types
+|   |-- history
+|   |   `-- components
+|   |-- onboarding
+|   |   `-- components
+|   |-- pose
+|   |   |-- components
+|   |   |-- hooks
+|   |   `-- utils
+|   |-- profile
+|   |   |-- hooks
+|   |   `-- services
+|   |-- progress
+|   |   `-- components
+|   |-- reminders
+|   |   `-- components
+|   |-- sessions
+|   |   |-- components
+|   |   `-- services
+|   `-- settings
+|       `-- components
+|-- hooks
+|-- lib
+|   `-- supabase
+|-- public
+|   |-- exercises
+|   |   |-- button-fastening
+|   |   |-- hand-function
+|   |   |-- lift-place
+|   |   |-- reach-grasp
+|   |   `-- target-touch
+|   |-- icons
+|   |-- illustrations
+|   |-- images
+|   `-- video
+|-- services
+|-- styles
+`-- types
+
+100 directories

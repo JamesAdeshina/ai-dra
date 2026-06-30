@@ -1,0 +1,258 @@
+frontend
+|-- .env.example
+|-- .env.local
+|-- .gitignore
+|-- AGENTS.md
+|-- CLAUDE.md
+|-- README.md
+|-- app
+|   |               `-- api
+|   |   |           `-- exercise-repetitions
+|   |   |           `-- route.ts
+|   |   |-- exercise-sessions
+|   |   |   |       `-- [sessionId]
+|   |   |   |       `-- route.ts
+|   |   |   `-- route.ts
+|   |   |-- onboarding
+|   |   |   `-- route.ts
+|   |   `-- profile
+|   |       |-- avatar
+|   |       |       `-- route.ts
+|   |       `-- route.ts
+|   |-- auth
+|   |   |-- callback
+|   |   |   `-- route.ts
+|   |   |-- check-email
+|   |   |   `-- page.tsx
+|   |   |-- forgot-password
+|   |   |   `-- page.tsx
+|   |   |-- login
+|   |   |   `-- page.tsx
+|   |   |-- register
+|   |   |   `-- page.tsx
+|   |   `-- reset-password
+|   |       `-- page.tsx
+|   |-- dashboard
+|   |   `-- page.tsx
+|   |-- exercises
+|   |   |-- [exerciseId]
+|   |   |   |-- demo
+|   |   |   |       `-- page.tsx
+|   |   |   |-- page.tsx
+|   |   |   `-- start
+|   |   |           `-- page.tsx
+|   |   `-- page.tsx
+|   |-- favicon.ico
+|   |-- globals.css
+|   |-- history
+|   |   `-- page.tsx
+|   |-- layout.tsx
+|   |-- onboarding
+|   |   `-- page.tsx
+|   |-- page.tsx
+|   |-- progress
+|   |   `-- page.tsx
+|   |-- reminders
+|   |   `-- page.tsx
+|   |-- session
+|   |   `-- page.tsx
+|   `-- settings
+|       `-- page.tsx
+|-- components
+|   |-- layout
+|   |   |-- app-layout.tsx
+|   |   `-- page-container.tsx
+|   |-- navigation
+|   |   |-- profile-dropdown.tsx
+|   |   |-- sign-out-modal.tsx
+|   |   |-- top-navigation.tsx
+|   |   `-- user-menu.tsx
+|   |-- shared
+|   |   |-- logo.tsx
+|   |   `-- page-header.tsx
+|   `-- ui
+|       |-- avatar.tsx
+|       |-- badge.tsx
+|       |-- button.tsx
+|       |-- card.tsx
+|       |-- dialog.tsx
+|       |-- dropdown-menu.tsx
+|       |-- input.tsx
+|       |-- progress.tsx
+|       |-- separator.tsx
+|       |-- slider.tsx
+|       |-- switch.tsx
+|       `-- tabs.tsx
+|-- components.json
+|-- eslint.config.mjs
+|-- features
+|   |-- auth
+|   |   `-- components
+|   |       |-- auth-layout.tsx
+|   |       |-- check-email-card.tsx
+|   |       |-- forgot-password-form.tsx
+|   |       |-- login-form.tsx
+|   |       |-- register-form.tsx
+|   |       `-- reset-password-form.tsx
+|   |-- dashboard
+|   |   |-- components
+|   |   |   |-- dashboard-view.tsx
+|   |   |   |-- quick-actions-card.tsx
+|   |   |   |-- streak-card.tsx
+|   |   |   |-- todays-session-card.tsx
+|   |   |   |-- weekly-progress-card.tsx
+|   |   |   `-- welcome-section.tsx
+|   |   |-- data
+|   |   `-- types
+|   |-- exercises
+|   |   |-- components
+|   |   |   |-- demo
+|   |   |   |       `-- exercise-demo-view.tsx
+|   |   |   |-- details
+|   |   |   |       `-- exercise-details-view.tsx
+|   |   |   |-- exercise-filter-tabs.tsx
+|   |   |   |-- exercise-library-view.tsx
+|   |   |   `-- exercise-list-item.tsx
+|   |   |-- data
+|   |   |   |-- exercise-details.ts
+|   |   |   `-- exercises.ts
+|   |   `-- types
+|   |-- history
+|   |   `-- components
+|   |       |-- history-empty-state.tsx
+|   |       |-- history-table.tsx
+|   |       `-- history-view.tsx
+|   |-- onboarding
+|   |   `-- components
+|   |       |-- add-carer-step.tsx
+|   |       |-- onboarding-view.tsx
+|   |       |-- permissions-step.tsx
+|   |       |-- setup-complete-step.tsx
+|   |       `-- welcome-step.tsx
+|   |-- pose
+|   |   |-- components
+|   |   |   |-- hand-overlay.tsx
+|   |   |   `-- pose-overlay.tsx
+|   |   |-- hooks
+|   |   |   |-- use-hand-tracker.ts
+|   |   |   `-- use-pose-tracker.ts
+|   |   `-- utils
+|   |       |-- angle-calculator.ts
+|   |       |-- button-fastening-counter.ts
+|   |       |-- exercise-rules.ts
+|   |       |-- hand-function-counter.ts
+|   |       |-- hand-side-tracker.ts
+|   |       |-- landmark-smoother.ts
+|   |       |-- lift-place-counter.ts
+|   |       |-- movement-speed-tracker.ts
+|   |       |-- pose-types.ts
+|   |       `-- rep-counter.ts
+|   |-- profile
+|   |   |-- hooks
+|   |   |   `-- use-current-profile.ts
+|   |   `-- services
+|   |       `-- profile-service.ts
+|   |-- progress
+|   |   `-- components
+|   |       |-- progress-stat-card.tsx
+|   |       |-- progress-view.tsx
+|   |       |-- score-trend-card.tsx
+|   |       `-- top-exercises-card.tsx
+|   |-- reminders
+|   |   `-- components
+|   |       |-- reminder-notification-card.tsx
+|   |       |-- reminder-settings-card.tsx
+|   |       |-- reminders-view.tsx
+|   |       |-- tips-card.tsx
+|   |       `-- weekly-progress-card.tsx
+|   |-- sessions
+|   |   |-- components
+|   |   |   |-- camera-placeholder.tsx
+|   |   |   |-- end-session-modal.tsx
+|   |   |   |-- exercise-demo-modal.tsx
+|   |   |   |-- live-feedback-card.tsx
+|   |   |   |-- range-of-motion-card.tsx
+|   |   |   |-- rep-progress-card.tsx
+|   |   |   |-- session-complete-modal.tsx
+|   |   |   |-- session-controls.tsx
+|   |   |   |-- session-view.tsx
+|   |   |   `-- support-modal.tsx
+|   |   `-- services
+|   |       `-- session-service.ts
+|   `-- settings
+|       `-- components
+|           |-- about-settings.tsx
+|           |-- accessibility-settings.tsx
+|           |-- change-password-settings.tsx
+|           |-- help-support-settings.tsx
+|           |-- preferences-settings.tsx
+|           |-- profile-settings.tsx
+|           |-- profile-summary-card.tsx
+|           |-- settings-sidebar.tsx
+|           `-- settings-view.tsx
+|-- frontend-directory.txt
+|-- hooks
+|-- lib
+|   |-- supabase
+|   |   |-- client.ts
+|   |   |-- proxy.ts
+|   |   `-- server.ts
+|   `-- utils.ts
+|-- next-env.d.ts
+|-- next.config.ts
+|-- package-lock.json
+|-- package.json
+|-- postcss.config.mjs
+|-- proxy.ts
+|-- public
+|   |-- exercises
+|   |   |-- button-fastening
+|   |   |   |-- button-fastening-active.png
+|   |   |   |-- button-fastening-start.png
+|   |   |   `-- button-fastening-thumbnail.png
+|   |   |-- hand-function
+|   |   |   |-- hand-function-active.png
+|   |   |   |-- hand-function-start.png
+|   |   |   `-- hand-function-thumbnail.png
+|   |   |-- lift-place
+|   |   |   |-- lift-place-active.png
+|   |   |   |-- lift-place-start.png
+|   |   |   `-- lift-place-thumbnail.png
+|   |   |-- reach-grasp
+|   |   |   |-- reach-grasp-active.png
+|   |   |   |-- reach-grasp-start.png
+|   |   |   `-- reach-grasp-thumbnail.png
+|   |   `-- target-touch
+|   |       |-- target-touch-active.png
+|   |       |-- target-touch-start.png
+|   |       `-- target-touch-thumbnail.png
+|   |-- file.svg
+|   |-- globe.svg
+|   |-- icons
+|   |-- illustrations
+|   |   |-- arm-down.png
+|   |   |-- cup-to-shelf.png
+|   |   |-- elbow-flexion.png
+|   |   |-- shoulder-abduction.png
+|   |   |-- shoulder-flexion.png
+|   |   `-- wrist-extension.png
+|   |-- images
+|   |   |-- friendly_reminders.png
+|   |   |-- guided_exercises.png
+|   |   |-- live_feedback.png
+|   |   |-- logo.png
+|   |   |-- logo.svg
+|   |   |-- progress_tracking.png
+|   |   |-- session-preview.png.png
+|   |   `-- university_of_derby.svg
+|   |-- next.svg
+|   |-- vercel.svg
+|   |-- video
+|   |   `-- Shoulder Flexion video.mp4
+|   `-- window.svg
+|-- services
+|-- styles
+|-- tsconfig.json
+`-- types
+
+81 directories, 174 files
