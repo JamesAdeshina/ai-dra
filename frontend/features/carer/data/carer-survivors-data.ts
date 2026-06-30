@@ -1,0 +1,94 @@
+import type {
+  CarerSurvivorDirectoryItem,
+  DirectorySurvivorStatus,
+} from "@/features/carer/types";
+
+export const pendingSurvivorInviteCount = 1;
+
+export const carerSurvivors: CarerSurvivorDirectoryItem[] = [
+  {
+    id: "william-carter",
+    name: "William Carter",
+    initials: "WC",
+    age: 58,
+    relationship: "Father",
+    conditionLabel: "Stroke Survivor",
+    affectedSide: "RIGHT",
+    status: "ON_TRACK",
+    activeToday: true,
+    linkedAt: "2026-06-26T10:30:00.000Z",
+    todayProgressMinutes: 18,
+    dailyGoalMinutes: 30,
+    completedSessions: 2,
+    targetSessions: 3,
+    currentStreakDays: 5,
+    latestSessionExercise: "Wrist Extension",
+    latestSessionDateLabel: "Today",
+    latestSessionTime: "6:30 PM",
+    averageScore: 76,
+  },
+  {
+    id: "margaret-wilson",
+    name: "Margaret Wilson",
+    initials: "MW",
+    age: 67,
+    relationship: "Family Friend",
+    conditionLabel: "Stroke Survivor",
+    affectedSide: "LEFT",
+    status: "NEEDS_SUPPORT",
+    activeToday: true,
+    linkedAt: "2026-06-23T09:15:00.000Z",
+    todayProgressMinutes: 12,
+    dailyGoalMinutes: 30,
+    completedSessions: 1,
+    targetSessions: 3,
+    currentStreakDays: 2,
+    latestSessionExercise: "Lift and Place Object",
+    latestSessionDateLabel: "Yesterday",
+    latestSessionTime: "4:20 PM",
+    averageScore: 64,
+  },
+  {
+    id: "robert-singh",
+    name: "Robert Singh",
+    initials: "RS",
+    age: 62,
+    relationship: "Uncle",
+    conditionLabel: "Stroke Survivor",
+    affectedSide: "RIGHT",
+    status: "AT_RISK",
+    activeToday: false,
+    linkedAt: "2026-06-18T14:45:00.000Z",
+    todayProgressMinutes: 0,
+    dailyGoalMinutes: 30,
+    completedSessions: 0,
+    targetSessions: 3,
+    currentStreakDays: 0,
+    latestSessionExercise: "Hand Function Task",
+    latestSessionDateLabel: "5 days ago",
+    latestSessionTime: "11:10 AM",
+    averageScore: 48,
+  },
+];
+
+export const survivorStatusGuide: Array<{
+  status: DirectorySurvivorStatus;
+  label: string;
+  description: string;
+}> = [
+  {
+    status: "ON_TRACK",
+    label: "On Track",
+    description: "Consistent progress and meeting goals.",
+  },
+  {
+    status: "NEEDS_SUPPORT",
+    label: "Needs Support",
+    description: "May need encouragement or assistance.",
+  },
+  {
+    status: "AT_RISK",
+    label: "At Risk",
+    description: "Several missed sessions detected.",
+  },
+];
