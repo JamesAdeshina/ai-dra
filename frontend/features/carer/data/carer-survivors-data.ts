@@ -69,6 +69,27 @@ export const carerSurvivors: CarerSurvivorDirectoryItem[] = [
     latestSessionTime: "11:10 AM",
     averageScore: 48,
   },
+  {
+  id: "rajesh-sharma",
+  name: "Rajesh Sharma",
+  initials: "RS",
+  age: 55,
+  relationship: "Brother",
+  conditionLabel: "Stroke Survivor",
+  affectedSide: "LEFT",
+  status: "ON_TRACK",
+  activeToday: true,
+  linkedAt: "2026-06-28T08:20:00.000Z",
+  todayProgressMinutes: 24,
+  dailyGoalMinutes: 30,
+  completedSessions: 2,
+  targetSessions: 3,
+  currentStreakDays: 7,
+  latestSessionExercise: "Shoulder Flexion",
+  latestSessionDateLabel: "Today",
+  latestSessionTime: "8:15 AM",
+  averageScore: 82,
+},
 ];
 
 export const survivorStatusGuide: Array<{

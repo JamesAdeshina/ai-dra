@@ -1,0 +1,48 @@
+import type { LinkedSurvivorRecord } from "@/features/carer/types/linked-survivor";
+
+export const linkedSurvivors: LinkedSurvivorRecord[] = [
+  {
+    id: "invite-patricia-morgan",
+    name: "Patricia Morgan",
+    initials: "PM",
+    age: 62,
+    conditionLabel: "Stroke Survivor",
+    email: "patricia.morgan@gmail.com",
+    joinedAtLabel: "15 Feb 2026",
+    status: "PENDING",
+  },
+  {
+    id: "invite-rajesh-sharma",
+    survivorId: "rajesh-sharma",
+    name: "Rajesh Sharma",
+    initials: "RS",
+    age: 62,
+    conditionLabel: "Stroke Survivor",
+    email: "rajesh.sharma@gmail.com",
+    joinedAtLabel: "15 Feb 2026",
+    linkedAtLabel: "15 Feb 2026",
+    status: "ACCEPTED",
+  },
+  {
+    id: "invite-william-carter",
+    survivorId: "william-carter",
+    name: "William Carter",
+    initials: "WC",
+    age: 58,
+    conditionLabel: "Stroke Survivor",
+    email: "william.carter@gmail.com",
+    joinedAtLabel: "15 Feb 2026",
+    linkedAtLabel: "15 Feb 2026",
+    status: "ACCEPTED",
+  },
+  {
+    id: "invite-margaret-wilson",
+    name: "Margaret Wilson",
+    initials: "MW",
+    age: 67,
+    conditionLabel: "Stroke Survivor",
+    email: "margaret.wilson@gmail.com",
+    joinedAtLabel: "03 Mar 2026",
+    status: "EXPIRED",
+  },
+];

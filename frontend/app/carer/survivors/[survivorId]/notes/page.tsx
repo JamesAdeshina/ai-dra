@@ -1,10 +1,35 @@
-import { CarerPagePlaceholder } from "@/features/carer/components/layout/carer-page-placeholder";
+import { notFound } from "next/navigation";
 
-export default function CarerSurvivorNotesPage() {
+import { SurvivorNotesView } from "@/features/carer/components/survivors/survivor-notes-view";
+import { getSurvivorDetailById } from "@/features/carer/data/survivor-detail-data";
+import { getSurvivorSharedNotesById } from "@/features/carer/data/survivor-note-data";
+
+type SurvivorNotesPageProps = {
+  params: Promise<{
+    survivorId: string;
+  }>;
+};
+
+export default async function SurvivorNotesPage({
+  params,
+}: SurvivorNotesPageProps) {
+  const { survivorId } = await params;
+
+  const survivor =
+    getSurvivorDetailById(survivorId);
+
+  if (!survivor) {
+    notFound();
+  }
+
+  const notes =
+    getSurvivorSharedNotesById(survivorId);
+
   return (
-    <CarerPagePlaceholder
-      title="Support Notes"
-      description="This page will let carers review and add supportive, non-clinical observations about rehabilitation sessions."
+    <SurvivorNotesView
+      survivorId={survivorId}
+      survivorName={survivor.name}
+      initialNotes={notes}
     />
   );
 }
