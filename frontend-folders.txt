@@ -1,5 +1,27 @@
 frontend
 |-- app
+|   |-- admin
+|   |   |-- analytics
+|   |   |-- carers
+|   |   |   `-- [carerId]
+|   |   |-- dashboard
+|   |   |-- exercises
+|   |   |   |-- [exerciseId]
+|   |   |   `-- new
+|   |   |-- invitations
+|   |   |-- notifications
+|   |   |-- sessions
+|   |   |   `-- [sessionId]
+|   |   |-- settings
+|   |   |   |-- engagement
+|   |   |   |-- export
+|   |   |   |-- notifications
+|   |   |   |-- privacy
+|   |   |   |-- profile
+|   |   |   |-- security
+|   |   |   `-- system
+|   |   `-- survivors
+|   |       `-- [survivorId]
 |   |-- api
 |   |   |-- exercise-repetitions
 |   |   |-- exercise-sessions
@@ -17,8 +39,16 @@ frontend
 |   |-- carer
 |   |   |-- dashboard
 |   |   |-- invitations
+|   |   |   |-- manage
+|   |   |   |-- pending
+|   |   |   `-- send
 |   |   |-- notifications
 |   |   |-- settings
+|   |   |   |-- about
+|   |   |   |-- help
+|   |   |   |-- notifications
+|   |   |   |-- password
+|   |   |   `-- profile
 |   |   `-- survivors
 |   |       `-- [survivorId]
 |   |           |-- exercises
@@ -41,11 +71,30 @@ frontend
 |   |-- shared
 |   `-- ui
 |-- features
+|   |-- admin
+|   |   |-- components
+|   |   |   |-- analytics
+|   |   |   |-- carers
+|   |   |   |-- dashboard
+|   |   |   |-- exercises
+|   |   |   |-- invitations
+|   |   |   |-- layout
+|   |   |   |-- notifications
+|   |   |   |-- sessions
+|   |   |   |-- settings
+|   |   |   |-- shared
+|   |   |   `-- survivors
+|   |   |-- data
+|   |   |-- hooks
+|   |   |-- services
+|   |   |-- types
+|   |   `-- utils
 |   |-- auth
 |   |   `-- components
 |   |-- carer
 |   |   |-- components
 |   |   |   |-- dashboard
+|   |   |   |-- invitations
 |   |   |   |-- layout
 |   |   |   |-- notifications
 |   |   |   |-- settings
@@ -86,6 +135,13 @@ frontend
 |-- lib
 |   `-- supabase
 |-- public
+|   |-- audio
+|   |   |-- effects
+|   |   |-- licences
+|   |   |   |-- adobe-firefly
+|   |   |   `-- pixabay
+|   |   |-- music
+|   |   `-- voice
 |   |-- exercises
 |   |   |-- button-fastening
 |   |   |-- hand-function
@@ -100,4 +156,4 @@ frontend
 |-- styles
 `-- types
 
-100 directories
+156 directories

@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-DRA is a University of Derby research prototype using computer vision to support accessible, connected upper-limb rehabilitation for stroke survivors." />
+  <meta name="theme-color" content="#160d2d" />
+  <title>AI-DRA | Intelligent, Connected Stroke Rehabilitation</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    * { margin: 0; }
+
+    :root {
+      --ink-950: #160d2d;
+      --ink-900: #21113f;
+      --ink-850: #2a1550;
+      --ink-800: #34205f;
+      --purple-700: #6544d8;
+      --purple-600: #7a59e8;
+      --purple-500: #9275f4;
+      --purple-300: #c8b8ff;
+      --purple-100: #f0ebff;
+      --teal-600: #0c9b91;
+      --teal-500: #14b8aa;
+      --teal-100: #e7faf7;
+      --rose-500: #ff7aa8;
+      --amber-500: #f4b55f;
+      --green-500: #42c991;
+      --white: #ffffff;
+      --cloud: #f8f7fc;
+      --mist: #f1eef8;
+      --text: #211b2d;
+      --muted: #6f687d;
+      --line: #e7e1f0;
+      --shadow-sm: 0 12px 30px rgba(34, 17, 63, 0.08);
+      --shadow-md: 0 24px 60px rgba(34, 17, 63, 0.13);
+      --shadow-lg: 0 38px 100px rgba(17, 8, 40, 0.28);
+      --radius-sm: 14px;
+      --radius-md: 22px;
+      --radius-lg: 32px;
+      --container: min(1180px, calc(100% - 40px));
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-width: 320px;
+      font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow-x: hidden;
+    }
+
+    body.nav-open { overflow: hidden; }
+
+    img, svg { display: block; max-width: 100%; }
+    button, input, textarea, select { font: inherit; }
+    a { color: inherit; }
+
+    .container { width: var(--container); margin-inline: auto; }
+    .section { padding: 112px 0; }
+    .section-soft { background: var(--cloud); }
+    .section-dark { background: var(--ink-950); color: var(--white); }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 18px;
+      color: var(--purple-700);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .section-dark .eyebrow { color: var(--purple-300); }
+
+    .section-heading {
+      max-width: 760px;
+      font-family: "Manrope", sans-serif;
+      font-size: clamp(2rem, 4vw, 3.55rem);
+      line-height: 1.08;
+      letter-spacing: -0.045em;
+      color: var(--ink-950);
+    }
+
+    .section-dark .section-heading { color: var(--white); }
+
+    .section-copy {
+      max-width: 660px;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .section-dark .section-copy { color: rgba(255,255,255,0.66); }
+
+    .section-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 36px;
+      margin-bottom: 54px;
+    }
+
+    .section-head-row .section-copy { max-width: 430px; margin: 0; }
+
+    .gradient-text {
+      color: transparent;
+      background: linear-gradient(110deg, #ffffff 10%, #d6caff 50%, #70e5d6 95%);
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Navigation */
+    .site-header {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 1000;
+      transition: background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      border-bottom: 1px solid transparent;
+    }
+
+    .site-header.scrolled {
+      background: rgba(22,13,45,0.9);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-color: rgba(255,255,255,0.08);
+      box-shadow: 0 12px 40px rgba(12, 5, 30, 0.16);
+    }
+
+    .nav-shell {
+      width: var(--container);
+      height: 78px;
+      margin-inline: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--white);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, var(--purple-600), var(--teal-500));
+      box-shadow: 0 12px 30px rgba(122,89,232,0.32);
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 50%;
+      top: -12px;
+      right: -8px;
+    }
+
+    .brand-mark svg { width: 24px; height: 24px; position: relative; z-index: 1; }
+
+    .brand-copy { display: grid; line-height: 1.05; }
+    .brand-name { font-family: "Manrope", sans-serif; font-size: 1.06rem; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub { margin-top: 4px; color: rgba(255,255,255,0.5); font-size: 0.67rem; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.72);
+      text-decoration: none;
+      font-size: 0.89rem;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible { color: var(--white); }
+
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+
+    .nav-login {
+      color: rgba(255,255,255,0.84);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 10px 12px;
+    }
+
+    .button {
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: 0;
+      border-radius: 14px;
+      padding: 0 21px;
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .button:hover { transform: translateY(-2px); }
+
+    .button-primary {
+      color: var(--white);
+      background: linear-gradient(135deg, var(--purple-600), #6c46de 55%, #4d82d8);
+      box-shadow: 0 14px 30px rgba(101,68,216,0.28);
+    }
+
+    .button-primary:hover { box-shadow: 0 18px 34px rgba(101,68,216,0.38); }
+
+    .button-light {
+      color: var(--ink-950);
+      background: var(--white);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+    }
+
+    .button-ghost {
+      color: var(--white);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(10px);
+    }
+
+    .button-outline {
+      color: var(--ink-900);
+      background: transparent;
+      border: 1px solid var(--line);
+    }
+
+    .button svg { width: 17px; height: 17px; }
+
+    .menu-button {
+      display: none;
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 13px;
+      background: rgba(255,255,255,0.06);
+      color: var(--white);
+      cursor: pointer;
+    }
+
+    .menu-button span,
+    .menu-button::before,
+    .menu-button::after {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 2px;
+      margin: 4px auto;
+      border-radius: 999px;
+      background: currentColor;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .menu-button[aria-expanded="true"] span { opacity: 0; }
+    .menu-button[aria-expanded="true"]::before { transform: translateY(6px) rotate(45deg); }
+    .menu-button[aria-expanded="true"]::after { transform: translateY(-6px) rotate(-45deg); }
+
+    /* Hero */
+    .hero {
+      min-height: 850px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 82% 18%, rgba(20,184,170,0.23), transparent 27%),
+        radial-gradient(circle at 15% 0%, rgba(146,117,244,0.28), transparent 36%),
+        linear-gradient(145deg, #150b2c 0%, #20113f 48%, #111e3c 100%);
+      color: var(--white);
+      padding: 150px 0 96px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.25;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: linear-gradient(to bottom, black 0%, transparent 80%);
+    }
+
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    .hero-orb.one {
+      width: 410px;
+      height: 410px;
+      right: -150px;
+      top: 130px;
+      border: 1px solid rgba(200,184,255,0.18);
+    }
+
+    .hero-orb.two {
+      width: 230px;
+      height: 230px;
+      right: 13%;
+      bottom: -120px;
+      background: rgba(122,89,232,0.12);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(460px, 1.02fr);
+      align-items: center;
+      gap: 68px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      padding: 0 13px;
+      border: 1px solid rgba(200,184,255,0.22);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      color: #e5ddff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--teal-500);
+      box-shadow: 0 0 0 5px rgba(20,184,170,0.13);
+    }
+
+    .hero h1 {
+      max-width: 700px;
+      margin-top: 25px;
+      font-family: "Manrope", sans-serif;
+      font-size: clamp(3rem, 5.6vw, 5.65rem);
+      line-height: 0.98;
+      letter-spacing: -0.062em;
+      font-weight: 800;
+    }
+
+    .hero-lead {
+      max-width: 650px;
+      margin-top: 28px;
+      color: rgba(255,255,255,0.69);
+      font-size: clamp(1.02rem, 1.4vw, 1.17rem);
+      line-height: 1.75;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 13px;
+      margin-top: 36px;
+    }
+
+    .hero-proof {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 25px;
+      margin-top: 38px;
+      color: rgba(255,255,255,0.66);
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .proof-item { display: inline-flex; align-items: center; gap: 8px; }
+    .proof-item svg { width: 17px; height: 17px; color: #72e3d4; }
+
+    .hero-product {
+      position: relative;
+      min-height: 610px;
+      display: grid;
+      place-items: center;
+      perspective: 1400px;
+    }
+
+    .product-shell {
+      width: min(100%, 590px);
+      position: relative;
+      padding: 12px;
+      border-radius: 30px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.13);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+      transform: rotateY(-4deg) rotateX(2deg);
+    }
+
+    .product-window {
+      overflow: hidden;
+      border-radius: 22px;
+      background: #f8f7fc;
+      color: var(--text);
+      min-height: 488px;
+    }
+
+    .window-bar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: #21113f;
+      color: white;
+    }
+
+    .window-brand { display: flex; align-items: center; gap: 8px; font-family: "Manrope"; font-size: 0.8rem; font-weight: 800; }
+    .window-brand-dot { width: 9px; height: 9px; border-radius: 3px; background: linear-gradient(135deg, var(--purple-500), var(--teal-500)); }
+    .window-dots { display: flex; gap: 5px; }
+    .window-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.26); }
+
+    .window-layout {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      min-height: 440px;
+    }
+
+    .mock-sidebar {
+      padding: 18px 12px;
+      background: #2a1550;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .side-pill {
+      width: 39px;
+      height: 39px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: rgba(255,255,255,0.58);
+    }
+
+    .side-pill.active { background: rgba(255,255,255,0.12); color: white; }
+    .side-pill svg { width: 18px; height: 18px; }
+
+    .mock-main { padding: 20px; }
+
+    .mock-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .mock-kicker { color: var(--purple-700); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .mock-title { margin-top: 4px; font-family: "Manrope"; font-size: 1.02rem; font-weight: 800; color: var(--ink-950); }
+    .live-pill { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; background: #e7faf7; color: #087d74; font-size: 0.65rem; font-weight: 800; }
+    .live-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--teal-500); box-shadow: 0 0 0 4px rgba(20,184,170,0.12); }
+
+    .session-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.45fr) minmax(140px,0.55fr);
+      gap: 14px;
+    }
+
+    .camera-card {
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 50% 22%, rgba(146,117,244,0.26), transparent 30%),
+        linear-gradient(160deg, #1d1235, #2d1a4f 60%, #173e49);
+    }
+
+    .camera-grid {
+      position: absolute;
+      inset: 0;
+      opacity: 0.11;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px);
+      background-size: 34px 34px;
+    }
+
+    .pose-figure {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 188px;
+      height: 218px;
+      transform: translate(-50%, -45%);
+    }
+
+    .pose-line { stroke: #6de3d3; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 0 7px rgba(109,227,211,0.5)); }
+    .pose-joint { fill: #fff; stroke: #8a6af0; stroke-width: 3; }
+    .pose-target { fill: #ff8ab1; stroke: white; stroke-width: 2; }
+
+    .feedback-bubble {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.92);
+      color: var(--ink-900);
+      font-size: 0.68rem;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+    }
+
+    .feedback-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: var(--teal-100);
+      color: var(--teal-600);
+    }
+
+    .metric-stack { display: grid; gap: 10px; }
+    .metric-card { padding: 14px; border-radius: 16px; background: white; border: 1px solid var(--line); box-shadow: 0 8px 20px rgba(34,17,63,0.05); }
+    .metric-label { color: #7b7388; font-size: 0.62rem; font-weight: 700; }
+    .metric-value { margin-top: 4px; font-family: "Manrope"; color: var(--ink-950); font-size: 1.25rem; font-weight: 800; line-height: 1; }
+    .metric-value small { font-size: 0.62rem; color: var(--muted); }
+    .metric-bar { height: 5px; margin-top: 10px; border-radius: 999px; background: var(--mist); overflow: hidden; }
+    .metric-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--purple-600), var(--teal-500)); }
+
+    .session-bottom {
+      display: grid;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .mini-chart, .mini-action { border: 1px solid var(--line); border-radius: 15px; background: white; padding: 12px; }
+    .mini-chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .mini-chart-title { font-size: 0.67rem; font-weight: 800; color: var(--ink-950); }
+    .mini-chart-value { font-size: 0.63rem; font-weight: 800; color: var(--teal-600); }
+    .chart-bars { height: 42px; display: flex; align-items: end; gap: 6px; }
+    .chart-bars i { flex: 1; min-width: 5px; border-radius: 4px 4px 1px 1px; background: linear-gradient(180deg, var(--purple-500), #d7cafa); }
+    .mini-action { display: grid; place-items: center; background: linear-gradient(145deg, #f3efff, #eefcf9); color: var(--purple-700); text-align: center; }
+    .mini-action strong { font-size: 0.68rem; }
+    .mini-action span { display: block; color: var(--muted); font-size: 0.58rem; }
+
+    .float-card {
+      position: absolute;
+      z-index: 4;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 45px rgba(14,7,36,0.24);
+      color: var(--text);
+    }
+
+    .float-card.progress {
+      width: 178px;
+      left: -42px;
+      bottom: 60px;
+      padding: 15px;
+      border-radius: 18px;
+      animation: float 5s ease-in-out infinite;
+    }
+
+    .float-card.carer {
+      width: 192px;
+      right: -35px;
+      top: 56px;
+      padding: 14px;
+      border-radius: 18px;
+      animation: float 5s ease-in-out 1.2s infinite;
+    }
+
+    .float-top { display: flex; align-items: center; gap: 10px; }
+    .float-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; color: white; background: linear-gradient(135deg, var(--purple-600), var(--teal-500)); }
+    .float-icon svg { width: 17px; height: 17px; }
+    .float-title { font-size: 0.7rem; font-weight: 800; color: var(--ink-950); }
+    .float-sub { color: var(--muted); font-size: 0.58rem; }
+    .float-stat { margin-top: 11px; display: flex; align-items: end; justify-content: space-between; }
+    .float-stat strong { font-family: "Manrope"; font-size: 1.25rem; line-height: 1; color: var(--ink-950); }
+    .float-stat span { color: var(--green-500); font-size: 0.62rem; font-weight: 800; }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+
+    /* Credibility strip */
+    .credibility {
+      position: relative;
+      z-index: 3;
+      margin-top: -42px;
+    }
+
+    .credibility-shell {
+      display: grid;
+      grid-template-columns: 1.25fr repeat(3, 1fr);
+      background: white;
+      border: 1px solid rgba(101,68,216,0.1);
+      border-radius: 24px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .cred-item {
+      min-height: 108px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-right: 1px solid var(--line);
+    }
+
+    .cred-item:last-child { border-right: 0; }
+    .cred-item.primary { background: linear-gradient(135deg, #f3efff, #ecfbf8); }
+    .cred-icon { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 13px; display: grid; place-items: center; color: var(--purple-700); background: white; box-shadow: var(--shadow-sm); }
+    .cred-icon svg { width: 20px; height: 20px; }
+    .cred-title { font-family: "Manrope"; font-size: 0.86rem; font-weight: 800; color: var(--ink-950); line-height: 1.25; }
+    .cred-sub { margin-top: 3px; color: var(--muted); font-size: 0.72rem; line-height: 1.4; }
+
+    /* Problem / solution */
+    .challenge-grid {
+      display: grid;
+      grid-template-columns: minmax(0,0.9fr) minmax(0,1.1fr);
+      gap: 70px;
+      align-items: center;
+    }
+
+    .challenge-panel {
+      position: relative;
+      min-height: 530px;
+      border-radius: 30px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(146,117,244,0.24), transparent 30%),
+        linear-gradient(145deg, #241346, #162e47);
+      box-shadow: var(--shadow-md);
+      padding: 34px;
+      color: white;
+    }
+
+    .challenge-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.14;
+      background-image: linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+      background-size: 46px 46px;
+    }
+
+    .challenge-content { position: relative; z-index: 1; }
+    .challenge-label { color: #cdbfff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+    .challenge-panel h3 { max-width: 370px; margin-top: 18px; font-family: "Manrope"; font-size: clamp(1.75rem, 3vw, 2.6rem); line-height: 1.13; letter-spacing: -0.04em; }
+    .challenge-panel p { max-width: 430px; margin-top: 17px; color: rgba(255,255,255,0.65); }
+
+    .gap-flow {
+      margin-top: 34px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .gap-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 15px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+    }
+
+    .gap-number { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,0.11); color: #81e8dc; font-family: "Manrope"; font-size: 0.72rem; font-weight: 800; }
+    .gap-row strong { display: block; font-size: 0.84rem; }
+    .gap-row span { color: rgba(255,255,255,0.52); font-size: 0.7rem; }
+
+    .value-list { display: grid; gap: 18px; margin-top: 34px; }
+    .value-item { display: grid; grid-template-columns: 50px 1fr; gap: 16px; padding: 20px 0; border-top: 1px solid var(--line); }
+    .value-item:last-child { border-bottom: 1px solid var(--line); }
+    .value-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: var(--purple-700); background: var(--purple-100); }
+    .value-icon.teal { color: var(--teal-600); background: var(--teal-100); }
+    .value-icon svg { width: 22px; height: 22px; }
+    .value-item h3 { font-family: "Manrope"; color: var(--ink-950); font-size: 1rem; font-weight: 800; }
+    .value-item p { margin-top: 5px; color: var(--muted); font-size: 0.9rem; }
+
+    /* Ecosystem */
+    .ecosystem-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 7px;
+      width: fit-content;
+      margin-bottom: 34px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ecosystem-tab {
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 12px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .ecosystem-tab[aria-selected="true"] {
+      color: white;
+      background: var(--ink-900);
+      box-shadow: 0 10px 24px rgba(33,17,63,0.2);
+    }
+
+    .ecosystem-panel {
+      display: grid;
+      grid-template-columns: minmax(0,0.88fr) minmax(0,1.12fr);
+      gap: 55px;
+      align-items: center;
+      padding: 38px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background: linear-gradient(145deg, #ffffff, #f7f5fb);
+      box-shadow: var(--shadow-md);
+    }
+
+    .ecosystem-copy h3 { font-family: "Manrope"; color: var(--ink-950); font-size: clamp(1.65rem, 3vw, 2.45rem); line-height: 1.15; letter-spacing: -0.04em; }
+    .ecosystem-copy > p { margin-top: 16px; color: var(--muted); }
+    .ecosystem-list { display: grid; gap: 12px; margin-top: 25px; }
+    .ecosystem-list li { display: flex; gap: 10px; color: #4d4658; font-size: 0.9rem; list-style: none; }
+    .ecosystem-list li::before { content: ""; width: 20px; height: 20px; flex: 0 0 auto; margin-top: 2px; border-radius: 50%; background: var(--teal-100) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5 10 3 3 7-7' fill='none' stroke='%230c9b91' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat; }
+
+    .ecosystem-visual {
+      min-height: 365px;
+      position: relative;
+      border-radius: 25px;
+      overflow: hidden;
+      background: var(--ink-950);
+      padding: 22px;
+    }
+
+    .visual-top { display: flex; align-items: center; justify-content: space-between; color: white; }
+    .visual-person { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-family: "Manrope"; font-weight: 800; color: white; background: linear-gradient(135deg, var(--purple-500), var(--teal-500)); }
+    .visual-person strong { display: block; font-size: 0.77rem; }
+    .visual-person span { display: block; color: rgba(255,255,255,0.52); font-size: 0.61rem; }
+    .visual-status { padding: 6px 9px; border-radius: 999px; color: #8eeadd; background: rgba(20,184,170,0.11); border: 1px solid rgba(20,184,170,0.22); font-size: 0.62rem; font-weight: 800; }
+
+    .visual-cards { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 12px; margin-top: 19px; }
+    .visual-card { min-height: 120px; padding: 15px; border-radius: 17px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; }
+    .visual-card.light { background: white; color: var(--text); }
+    .visual-card.wide { grid-column: 1 / -1; min-height: 110px; }
+    .visual-label { color: rgba(255,255,255,0.5); font-size: 0.62rem; font-weight: 700; }
+    .visual-card.light .visual-label { color: var(--muted); }
+    .visual-number { margin-top: 6px; font-family: "Manrope"; font-size: 1.45rem; font-weight: 800; }
+    .visual-detail { margin-top: 6px; color: #8de8db; font-size: 0.62rem; font-weight: 700; }
+    .visual-card.light .visual-detail { color: var(--purple-700); }
+    .sparkline { margin-top: 15px; height: 36px; display: flex; align-items: end; gap: 5px; }
+    .sparkline i { flex: 1; border-radius: 4px 4px 1px 1px; background: linear-gradient(180deg, var(--teal-500), rgba(20,184,170,0.2)); }
+    .activity-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 13px; }
+    .activity-name { display: flex; align-items: center; gap: 9px; font-size: 0.67rem; font-weight: 800; }
+    .activity-icon { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: var(--purple-700); background: var(--purple-100); }
+    .activity-icon svg { width: 14px; height: 14px; }
+    .activity-badge { padding: 5px 8px; border-radius: 999px; color: var(--teal-600); background: var(--teal-100); font-size: 0.56rem; font-weight: 800; }
+
+    /* Differentiators */
+    .difference-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 54px;
+    }
+
+    .difference-card {
+      min-height: 260px;
+      padding: 26px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 22px;
+      background: rgba(255,255,255,0.055);
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .difference-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.08); border-color: rgba(200,184,255,0.28); }
+    .difference-number { color: rgba(255,255,255,0.3); font-family: "Manrope"; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; }
+    .difference-icon { width: 48px; height: 48px; margin-top: 25px; border-radius: 15px; display: grid; place-items: center; color: #dcd2ff; background: linear-gradient(145deg, rgba(146,117,244,0.26), rgba(20,184,170,0.18)); border: 1px solid rgba(255,255,255,0.1); }
+    .difference-icon svg { width: 22px; height: 22px; }
+    .difference-card h3 { margin-top: 21px; font-family: "Manrope"; font-size: 1.02rem; line-height: 1.3; }
+    .difference-card p { margin-top: 10px; color: rgba(255,255,255,0.57); font-size: 0.84rem; }
+
+    .comparison-wrap {
+      margin-top: 24px;
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 22px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .comparison-table { width: 100%; min-width: 760px; border-collapse: collapse; }
+    .comparison-table th, .comparison-table td { padding: 18px 20px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .comparison-table tr:last-child td { border-bottom: 0; }
+    .comparison-table th { color: rgba(255,255,255,0.52); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .comparison-table td { color: rgba(255,255,255,0.69); font-size: 0.84rem; }
+    .comparison-table td:first-child { color: white; font-weight: 800; }
+    .comparison-table .ai-column { background: rgba(122,89,232,0.12); color: white; }
+    .comparison-check { display: inline-flex; align-items: center; gap: 7px; color: #83e7d9; font-weight: 800; }
+    .comparison-limited { color: #d6c8a6; }
+
+    /* Intelligence */
+    .intelligence-grid {
+      display: grid;
+      grid-template-columns: minmax(0,0.85fr) minmax(0,1.15fr);
+      gap: 68px;
+      align-items: center;
+    }
+
+    .pipeline {
+      display: grid;
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .pipeline-step { display: grid; grid-template-columns: 42px 1fr; gap: 13px; }
+    .pipeline-index { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: var(--purple-100); color: var(--purple-700); font-family: "Manrope"; font-size: 0.75rem; font-weight: 800; }
+    .pipeline-step h3 { font-family: "Manrope"; color: var(--ink-950); font-size: 0.95rem; }
+    .pipeline-step p { margin-top: 3px; color: var(--muted); font-size: 0.84rem; }
+
+    .intelligence-visual {
+      min-height: 530px;
+      position: relative;
+      border-radius: 30px;
+      overflow: hidden;
+      background: linear-gradient(145deg, #f4efff, #edfafa);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-md);
+      padding: 28px;
+    }
+
+    .intel-window { height: 100%; min-height: 474px; border-radius: 22px; background: white; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .intel-head { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+    .intel-head strong { font-family: "Manrope"; font-size: 0.84rem; }
+    .intel-head span { font-size: 0.63rem; color: var(--teal-600); font-weight: 800; }
+    .intel-body { padding: 20px; }
+    .intel-score-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .intel-score { padding: 13px; border-radius: 14px; background: var(--cloud); }
+    .intel-score label { display: block; color: var(--muted); font-size: 0.58rem; font-weight: 700; }
+    .intel-score strong { display: block; margin-top: 5px; font-family: "Manrope"; color: var(--ink-950); font-size: 1.08rem; }
+    .intel-chart { margin-top: 16px; padding: 16px; border-radius: 16px; border: 1px solid var(--line); }
+    .intel-chart-title { display: flex; align-items: center; justify-content: space-between; font-size: 0.66rem; font-weight: 800; }
+    .line-chart { width: 100%; height: 130px; margin-top: 10px; }
+    .line-chart-grid { stroke: #ece8f2; stroke-width: 1; }
+    .line-chart-path { stroke: #7252df; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .line-chart-area { fill: url(#chartGradient); }
+    .line-chart-dot { fill: white; stroke: #7252df; stroke-width: 3; }
+    .intel-alerts { display: grid; gap: 9px; margin-top: 14px; }
+    .intel-alert { display: flex; justify-content: space-between; gap: 12px; padding: 11px 12px; border-radius: 12px; background: #faf8fd; }
+    .intel-alert span { font-size: 0.63rem; font-weight: 800; }
+    .intel-alert em { font-style: normal; color: var(--muted); font-size: 0.59rem; }
+
+    /* Feature cards */
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 54px; }
+    .feature-card { min-height: 290px; position: relative; overflow: hidden; padding: 27px; border: 1px solid var(--line); border-radius: 22px; background: white; box-shadow: 0 14px 36px rgba(34,17,63,0.055); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+    .feature-card::after { content: ""; position: absolute; width: 120px; height: 120px; right: -45px; bottom: -48px; border-radius: 50%; background: var(--purple-100); opacity: 0.7; }
+    .feature-card:nth-child(2n)::after { background: var(--teal-100); }
+    .feature-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: var(--purple-700); background: var(--purple-100); }
+    .feature-card:nth-child(2n) .feature-icon { color: var(--teal-600); background: var(--teal-100); }
+    .feature-icon svg { width: 22px; height: 22px; }
+    .feature-status { display: inline-flex; margin-top: 25px; padding: 5px 9px; border-radius: 999px; color: #5d3cd0; background: #f0ebff; font-size: 0.61rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+    .feature-status.next { color: #8b621f; background: #fff6e7; }
+    .feature-card h3 { margin-top: 13px; font-family: "Manrope"; color: var(--ink-950); font-size: 1.05rem; line-height: 1.3; }
+    .feature-card p { position: relative; z-index: 1; margin-top: 10px; color: var(--muted); font-size: 0.86rem; }
+
+    /* Research / status */
+    .research-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 55px; align-items: center; }
+    .research-cards { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+    .research-card { min-height: 180px; padding: 22px; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; background: rgba(255,255,255,0.055); }
+    .research-card:nth-child(1) { grid-column: 1 / -1; min-height: 210px; background: linear-gradient(135deg, rgba(122,89,232,0.2), rgba(20,184,170,0.1)); }
+    .research-card-label { color: rgba(255,255,255,0.48); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+    .research-card-value { margin-top: 15px; font-family: "Manrope"; font-size: clamp(1.7rem,3vw,2.6rem); font-weight: 800; line-height: 1; }
+    .research-card p { margin-top: 10px; color: rgba(255,255,255,0.58); font-size: 0.8rem; }
+    .research-progress { margin-top: 24px; display: grid; gap: 10px; }
+    .research-progress-row { display: grid; grid-template-columns: 110px 1fr 34px; align-items: center; gap: 10px; font-size: 0.62rem; }
+    .research-progress-row span { color: rgba(255,255,255,0.6); }
+    .research-track { height: 7px; border-radius: 999px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .research-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--purple-500), var(--teal-500)); }
+
+    .principles { display: grid; gap: 12px; margin-top: 28px; }
+    .principle { display: grid; grid-template-columns: 42px 1fr; gap: 13px; padding: 15px 0; border-top: 1px solid rgba(255,255,255,0.1); }
+    .principle-icon { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; color: #d9ceff; background: rgba(255,255,255,0.07); }
+    .principle-icon svg { width: 20px; height: 20px; }
+    .principle h3 { font-family: "Manrope"; font-size: 0.94rem; }
+    .principle p { margin-top: 4px; color: rgba(255,255,255,0.56); font-size: 0.82rem; }
+
+    /* Journey */
+    .journey {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 0;
+      margin-top: 56px;
+      position: relative;
+    }
+
+    .journey::before { content: ""; position: absolute; top: 31px; left: 12.5%; right: 12.5%; height: 2px; background: linear-gradient(90deg, var(--purple-300), var(--teal-500)); }
+    .journey-step { position: relative; padding: 0 20px; text-align: center; }
+    .journey-number { width: 64px; height: 64px; margin: 0 auto; position: relative; z-index: 1; display: grid; place-items: center; border-radius: 20px; border: 7px solid white; background: var(--purple-100); color: var(--purple-700); font-family: "Manrope"; font-weight: 800; box-shadow: 0 0 0 1px var(--line); }
+    .journey-step:nth-child(2n) .journey-number { color: var(--teal-600); background: var(--teal-100); }
+    .journey-step h3 { margin-top: 18px; font-family: "Manrope"; color: var(--ink-950); font-size: 0.94rem; }
+    .journey-step p { margin-top: 8px; color: var(--muted); font-size: 0.8rem; }
+
+    /* CTA */
+    .cta-section { padding: 90px 0; background: var(--cloud); }
+    .cta-shell {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 50px;
+      padding: 54px;
+      border-radius: 32px;
+      color: white;
+      background:
+        radial-gradient(circle at 88% 20%, rgba(20,184,170,0.35), transparent 30%),
+        linear-gradient(135deg, #21113f, #5c39ca 65%, #1e8d91);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .cta-shell::before { content: ""; position: absolute; width: 360px; height: 360px; left: -160px; bottom: -230px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); }
+    .cta-content { position: relative; z-index: 1; }
+    .cta-kicker { color: #dcd2ff; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    .cta-shell h2 { max-width: 730px; margin-top: 13px; font-family: "Manrope"; font-size: clamp(2rem,4vw,3.25rem); line-height: 1.08; letter-spacing: -0.045em; }
+    .cta-shell p { max-width: 650px; margin-top: 16px; color: rgba(255,255,255,0.68); }
+    .cta-actions { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; min-width: 210px; }
+    .cta-meta { margin-top: 18px; color: rgba(255,255,255,0.5); font-size: 0.72rem; }
+
+    /* Footer */
+    .footer { background: #100821; color: white; padding: 62px 0 24px; }
+    .footer-grid { display: grid; grid-template-columns: 1.35fr 0.65fr 0.65fr; gap: 50px; }
+    .footer-intro { max-width: 420px; margin-top: 18px; color: rgba(255,255,255,0.53); font-size: 0.84rem; }
+    .footer-title { color: rgba(255,255,255,0.42); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+    .footer-links { display: grid; gap: 10px; margin-top: 17px; list-style: none; }
+    .footer-links a { color: rgba(255,255,255,0.68); text-decoration: none; font-size: 0.82rem; }
+    .footer-links a:hover { color: white; }
+    .footer-bottom { display: flex; justify-content: space-between; gap: 20px; margin-top: 50px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.38); font-size: 0.72rem; }
+
+    /* Reveals */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* Responsive */
+    @media (max-width: 1080px) {
+      .nav-links { display: none; }
+      .menu-button { display: block; }
+      .nav-actions .nav-login, .nav-actions > .button { display: none; }
+      .nav-links.mobile-open {
+        display: flex;
+        position: fixed;
+        inset: 78px 20px auto 20px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        background: rgba(22,13,45,0.98);
+        box-shadow: var(--shadow-lg);
+      }
+      .nav-links.mobile-open a { display: block; padding: 13px 12px; border-radius: 10px; }
+      .nav-links.mobile-open a:hover { background: rgba(255,255,255,0.07); }
+      .hero-grid { grid-template-columns: 1fr; gap: 58px; }
+      .hero-copy { max-width: 820px; }
+      .hero-product { min-height: 560px; }
+      .product-shell { transform: none; }
+      .credibility-shell { grid-template-columns: repeat(2,1fr); }
+      .cred-item:nth-child(2) { border-right: 0; }
+      .cred-item:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .challenge-grid, .intelligence-grid, .research-grid { grid-template-columns: 1fr; }
+      .ecosystem-panel { grid-template-columns: 1fr; }
+      .difference-grid { grid-template-columns: repeat(2,1fr); }
+      .feature-grid { grid-template-columns: repeat(2,1fr); }
+      .cta-shell { grid-template-columns: 1fr; }
+      .cta-actions { flex-direction: row; flex-wrap: wrap; }
+    }
+
+    @media (max-width: 760px) {
+      :root { --container: min(100% - 28px, 1180px); }
+      .section { padding: 82px 0; }
+      .nav-shell { height: 70px; }
+      .brand-sub { display: none; }
+      .hero { min-height: auto; padding: 122px 0 78px; }
+      .hero h1 { font-size: clamp(2.65rem, 13vw, 4.4rem); }
+      .hero-lead { font-size: 0.98rem; }
+      .hero-product { min-height: 500px; }
+      .product-shell { width: 100%; padding: 8px; border-radius: 23px; }
+      .product-window { min-height: 420px; border-radius: 17px; }
+      .window-layout { grid-template-columns: 52px 1fr; min-height: 372px; }
+      .mock-sidebar { padding-inline: 6px; }
+      .side-pill { width: 36px; height: 36px; }
+      .mock-main { padding: 14px; }
+      .session-grid { grid-template-columns: 1fr; }
+      .metric-stack { grid-template-columns: repeat(3,1fr); }
+      .metric-card { padding: 10px; }
+      .metric-value { font-size: 1rem; }
+      .camera-card { min-height: 225px; }
+      .session-bottom { display: none; }
+      .float-card.progress { left: -2px; bottom: 14px; }
+      .float-card.carer { right: -4px; top: 26px; }
+      .credibility { margin-top: -24px; }
+      .credibility-shell { grid-template-columns: 1fr; }
+      .cred-item, .cred-item:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--line); }
+      .cred-item:last-child { border-bottom: 0; }
+      .section-head-row { display: block; }
+      .section-head-row .section-copy { margin-top: 18px; }
+      .challenge-panel { min-height: auto; padding: 26px; }
+      .ecosystem-tabs { width: 100%; overflow-x: auto; }
+      .ecosystem-tab { flex: 1 0 auto; }
+      .ecosystem-panel { padding: 22px; }
+      .visual-cards { grid-template-columns: 1fr; }
+      .visual-card.wide { grid-column: auto; }
+      .difference-grid, .feature-grid, .research-cards { grid-template-columns: 1fr; }
+      .research-card:nth-child(1) { grid-column: auto; }
+      .intel-score-row { grid-template-columns: 1fr; }
+      .journey { grid-template-columns: 1fr; gap: 28px; }
+      .journey::before { display: none; }
+      .journey-step { display: grid; grid-template-columns: 58px 1fr; column-gap: 14px; text-align: left; padding: 0; }
+      .journey-number { width: 58px; height: 58px; grid-row: 1 / span 2; border-width: 5px; }
+      .journey-step h3 { margin-top: 3px; }
+      .journey-step p { margin-top: 3px; }
+      .cta-shell { padding: 34px 25px; }
+      .cta-actions { flex-direction: column; }
+      .footer-grid { grid-template-columns: 1fr; gap: 30px; }
+      .footer-bottom { flex-direction: column; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-actions .button { width: 100%; }
+      .hero-proof { display: grid; gap: 10px; }
+      .hero-product { min-height: 450px; }
+      .product-shell { transform: scale(0.94); }
+      .float-card.carer { display: none; }
+      .float-card.progress { width: 160px; }
+      .metric-stack { display: none; }
+      .session-grid { display: block; }
+      .ecosystem-panel { padding: 18px; }
+      .ecosystem-visual { min-height: 330px; padding: 16px; }
+      .section-heading { font-size: 2.18rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header" id="siteHeader">
+    <div class="nav-shell">
+      <a class="brand" href="#top" aria-label="AI-DRA home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="6" r="3" fill="white"/>
+            <path d="M14 9.5v8.3M8.5 12.3 14 14l5.5-1.7M14 17.8l-4.2 5M14 17.8l4.2 5" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <span class="brand-name">AI-DRA</span>
+          <span class="brand-sub">Digital Rehabilitation Assistant</span>
+        </span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#platform">Platform</a></li>
+        <li><a href="#difference">Why AI-DRA</a></li>
+        <li><a href="#intelligence">Technology</a></li>
+        <li><a href="#research">Research</a></li>
+        <li><a href="#journey">How it works</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a class="nav-login" href="/login">Sign in</a>
+        <a class="button button-light" href="/register">Access prototype</a>
+        <button class="menu-button" id="menuButton" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <span class="hero-orb one" aria-hidden="true"></span>
+      <span class="hero-orb two" aria-hidden="true"></span>
+
+      <div class="container hero-grid">
+        <div class="hero-copy reveal visible">
+          <div class="hero-badge"><span class="hero-badge-dot"></span>University of Derby research prototype</div>
+          <h1>Rehabilitation that understands <span class="gradient-text">how you move.</span></h1>
+          <p class="hero-lead">
+            AI-DRA brings guided upper-limb stroke rehabilitation, live movement feedback, carer involvement, and research monitoring into one accessible platform, using a standard device camera with no wearable sensors required.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-light" href="/login">
+              Open the prototype
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="button button-ghost" href="#platform">
+              Explore the platform
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <div class="hero-proof" aria-label="Core project attributes">
+            <span class="proof-item">
+              <svg viewBox="0 0 20 20" fill="none"><path d="m4 10 4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Camera-based movement tracking
+            </span>
+            <span class="proof-item">
+              <svg viewBox="0 0 20 20" fill="none"><path d="m4 10 4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Survivor and carer portals
+            </span>
+            <span class="proof-item">
+              <svg viewBox="0 0 20 20" fill="none"><path d="m4 10 4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Research-ready monitoring
+            </span>
+          </div>
+        </div>
+
+        <div class="hero-product reveal visible" aria-label="AI-DRA live rehabilitation session interface preview">
+          <div class="product-shell">
+            <div class="product-window">
+              <div class="window-bar">
+                <div class="window-brand"><span class="window-brand-dot"></span>AI-DRA Session</div>
+                <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+              </div>
+              <div class="window-layout">
+                <aside class="mock-sidebar" aria-hidden="true">
+                  <span class="side-pill active">
+                    <svg viewBox="0 0 20 20" fill="none"><path d="M3 9.4 10 4l7 5.4V16a1 1 0 0 1-1 1h-4v-4H8v4H4a1 1 0 0 1-1-1V9.4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                  </span>
+                  <span class="side-pill"><svg viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 10h12M4 15h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                  <span class="side-pill"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16V9m6 7V4m6 12v-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                  <span class="side-pill"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 17c.4-3.1 2.2-5 5.5-5s5.1 1.9 5.5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                </aside>
+
+                <div class="mock-main">
+                  <div class="mock-head">
+                    <div>
+                      <div class="mock-kicker">Guided exercise</div>
+                      <div class="mock-title">Target Touch</div>
+                    </div>
+                    <div class="live-pill">Live tracking</div>
+                  </div>
+
+                  <div class="session-grid">
+                    <div class="camera-card">
+                      <div class="camera-grid"></div>
+                      <svg class="pose-figure" viewBox="0 0 190 220" fill="none" aria-hidden="true">
+                        <circle cx="95" cy="25" r="17" class="pose-line" fill="none"/>
+                        <line x1="95" y1="43" x2="95" y2="103" class="pose-line"/>
+                        <line x1="95" y1="58" x2="58" y2="77" class="pose-line"/>
+                        <line x1="58" y1="77" x2="38" y2="126" class="pose-line"/>
+                        <line x1="95" y1="58" x2="130" y2="73" class="pose-line"/>
+                        <line x1="130" y1="73" x2="150" y2="34" class="pose-line"/>
+                        <line x1="95" y1="103" x2="70" y2="132" class="pose-line"/>
+                        <line x1="95" y1="103" x2="121" y2="132" class="pose-line"/>
+                        <line x1="70" y1="132" x2="65" y2="194" class="pose-line"/>
+                        <line x1="121" y1="132" x2="127" y2="194" class="pose-line"/>
+                        <circle cx="58" cy="77" r="5" class="pose-joint"/><circle cx="38" cy="126" r="5" class="pose-joint"/>
+                        <circle cx="130" cy="73" r="5" class="pose-joint"/><circle cx="150" cy="34" r="6" class="pose-target"/>
+                        <circle cx="70" cy="132" r="5" class="pose-joint"/><circle cx="121" cy="132" r="5" class="pose-joint"/>
+                        <circle cx="65" cy="194" r="5" class="pose-joint"/><circle cx="127" cy="194" r="5" class="pose-joint"/>
+                      </svg>
+                      <div class="feedback-bubble">
+                        <span class="feedback-icon">✓</span>
+                        Good reach. Hold your arm steady.
+                      </div>
+                    </div>
+
+                    <div class="metric-stack">
+                      <div class="metric-card">
+                        <div class="metric-label">Repetitions</div>
+                        <div class="metric-value">7 <small>/ 10</small></div>
+                        <div class="metric-bar"><span style="width:70%"></span></div>
+                      </div>
+                      <div class="metric-card">
+                        <div class="metric-label">Movement score</div>
+                        <div class="metric-value">84<small>%</small></div>
+                        <div class="metric-bar"><span style="width:84%"></span></div>
+                      </div>
+                      <div class="metric-card">
+                        <div class="metric-label">Hold time</div>
+                        <div class="metric-value">2.8<small>s</small></div>
+                        <div class="metric-bar"><span style="width:74%"></span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="session-bottom">
+                    <div class="mini-chart">
+                      <div class="mini-chart-head"><span class="mini-chart-title">Movement consistency</span><span class="mini-chart-value">Improving</span></div>
+                      <div class="chart-bars" aria-hidden="true">
+                        <i style="height:35%"></i><i style="height:48%"></i><i style="height:43%"></i><i style="height:58%"></i><i style="height:66%"></i><i style="height:72%"></i><i style="height:84%"></i>
+                      </div>
+                    </div>
+                    <div class="mini-action"><strong>Voice guidance on</strong><span>Accessible session support</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="float-card progress">
+              <div class="float-top">
+                <span class="float-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 15.5 7.5 12l2.5 2.5L16 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8h4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span><span class="float-title">Weekly progress</span><span class="float-sub">Upper-limb sessions</span></span>
+              </div>
+              <div class="float-stat"><strong>4 sessions</strong><span>+18%</span></div>
+            </div>
+
+            <div class="float-card carer">
+              <div class="float-top">
+                <span class="float-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16c.3-3 1.9-4.7 4.5-4.7S11.2 13 11.5 16M13 8h4m-2-2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+                <span><span class="float-title">Carer connected</span><span class="float-sub">Permission-based support</span></span>
+              </div>
+              <div class="float-stat"><strong>Linked</strong><span>Active</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="credibility" aria-label="AI-DRA project overview">
+      <div class="container credibility-shell reveal">
+        <div class="cred-item primary">
+          <span class="cred-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 8.5 10 5l7 3.5L10 12 3 8.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 10.2V14c2.2 1.5 5.8 1.5 8 0v-3.8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+          <span><span class="cred-title">University of Derby seed-funded project</span><span class="cred-sub">Developed within a guided digital health research environment.</span></span>
+        </div>
+        <div class="cred-item">
+          <span class="cred-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/></svg></span>
+          <span><span class="cred-title">No wearable sensors</span><span class="cred-sub">Designed around the camera already available on common devices.</span></span>
+        </div>
+        <div class="cred-item">
+          <span class="cred-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/><circle cx="14" cy="8" r="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 16c.3-3 1.9-4.7 4.5-4.7S11.2 13 11.5 16M12 12c2.8 0 4.5 1.3 5 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+          <span><span class="cred-title">Connected support</span><span class="cred-sub">Survivor, carer, and research views within one platform.</span></span>
+        </div>
+        <div class="cred-item">
+          <span class="cred-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16V9m6 7V4m6 12v-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+          <span><span class="cred-title">Meaningful session data</span><span class="cred-sub">Progress, completion, movement quality, and engagement signals.</span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="platform">
+      <div class="container challenge-grid">
+        <div class="challenge-panel reveal">
+          <div class="challenge-content">
+            <div class="challenge-label">The rehabilitation gap</div>
+            <h3>Recovery should not become invisible once a survivor returns home.</h3>
+            <p>Home exercise can be difficult to perform consistently when guidance, reassurance, and visibility of progress are limited.</p>
+            <div class="gap-flow">
+              <div class="gap-row"><span class="gap-number">01</span><span><strong>Exercise at home</strong><span>Often without immediate feedback on movement quality.</span></span></div>
+              <div class="gap-row"><span class="gap-number">02</span><span><strong>Progress becomes hard to see</strong><span>Survivors and carers rely on memory or isolated appointments.</span></span></div>
+              <div class="gap-row"><span class="gap-number">03</span><span><strong>Engagement data is lost</strong><span>Researchers and care teams cannot easily understand what happens between sessions.</span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reveal">
+          <div class="eyebrow">One connected response</div>
+          <h2 class="section-heading">AI-DRA turns a home exercise session into guided, measurable rehabilitation.</h2>
+          <p class="section-copy">The platform is being designed to support the whole rehabilitation relationship, not only the movement on camera.</p>
+
+          <div class="value-list">
+            <article class="value-item">
+              <span class="value-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M3 11s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6Z" stroke="currentColor" stroke-width="1.7"/><circle cx="11" cy="11" r="2.5" stroke="currentColor" stroke-width="1.7"/></svg></span>
+              <div><h3>See and respond to movement</h3><p>Live pose landmarks, joint angles, hold timing, repetitions, and rule-based feedback help make each exercise more understandable.</p></div>
+            </article>
+            <article class="value-item">
+              <span class="value-icon teal"><svg viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7"/><path d="M3 19c.3-3.6 2-5.6 5-5.6s4.7 2 5 5.6M15 9h4m-2-2v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+              <div><h3>Keep carers meaningfully connected</h3><p>Permission-based linking lets carers support routines, review progress, and receive relevant notifications without taking over the survivor's experience.</p></div>
+            </article>
+            <article class="value-item">
+              <span class="value-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m7 9V4m7 14v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+              <div><h3>Make engagement visible for research</h3><p>A focused monitoring layer can show who is engaging, which exercises are completed, where sessions are abandoned, and how performance changes over time.</p></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-soft" id="ecosystem">
+      <div class="container">
+        <div class="section-head-row reveal">
+          <div>
+            <div class="eyebrow">A complete rehabilitation ecosystem</div>
+            <h2 class="section-heading">Three experiences. One shared picture of progress.</h2>
+          </div>
+          <p class="section-copy">AI-DRA is differentiated by the way its interfaces work together around the survivor, rather than operating as isolated tools.</p>
+        </div>
+
+        <div class="ecosystem-tabs reveal" role="tablist" aria-label="AI-DRA platform views">
+          <button class="ecosystem-tab" id="tab-survivor" type="button" role="tab" aria-controls="ecosystemPanel" aria-selected="true" data-view="survivor">Survivor experience</button>
+          <button class="ecosystem-tab" id="tab-carer" type="button" role="tab" aria-controls="ecosystemPanel" aria-selected="false" data-view="carer">Carer portal</button>
+          <button class="ecosystem-tab" id="tab-research" type="button" role="tab" aria-controls="ecosystemPanel" aria-selected="false" data-view="research">Research dashboard</button>
+        </div>
+
+        <div class="ecosystem-panel reveal" id="ecosystemPanel" role="tabpanel" aria-labelledby="tab-survivor">
+          <div class="ecosystem-copy">
+            <h3 id="ecosystemTitle">Clear guidance before, during, and after every session.</h3>
+            <p id="ecosystemDescription">The survivor journey is designed to reduce cognitive load, make exercises easier to follow, and turn progress into something visible and encouraging.</p>
+            <ul class="ecosystem-list" id="ecosystemList">
+              <li>Accessible authentication, dashboard, exercise library, and profile settings.</li>
+              <li>Exercise demonstrations, step-by-step preparation, and live camera guidance.</li>
+              <li>Repetition counting, hold timing, session history, progress, and reminders.</li>
+              <li>Optional voice instructions, sound effects, and reduced-motion preferences.</li>
+            </ul>
+          </div>
+
+          <div class="ecosystem-visual" id="ecosystemVisual" aria-live="polite">
+            <div class="visual-top">
+              <div class="visual-person"><span class="avatar" id="visualAvatar">WC</span><span><strong id="visualName">William Carter</strong><span id="visualRole">Survivor dashboard</span></span></div>
+              <span class="visual-status" id="visualStatus">Ready for session</span>
+            </div>
+            <div class="visual-cards" id="visualCards">
+              <div class="visual-card">
+                <div class="visual-label">This week</div><div class="visual-number">4 / 5</div><div class="visual-detail">Sessions completed</div>
+                <div class="sparkline" aria-hidden="true"><i style="height:35%"></i><i style="height:54%"></i><i style="height:47%"></i><i style="height:70%"></i><i style="height:82%"></i></div>
+              </div>
+              <div class="visual-card light">
+                <div class="visual-label">Next exercise</div><div class="visual-number">Target Touch</div><div class="visual-detail">10 repetitions</div>
+              </div>
+              <div class="visual-card light wide">
+                <div class="visual-label">Recent activity</div>
+                <div class="activity-row"><span class="activity-name"><span class="activity-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M4 9h10M9 4l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Lift &amp; Place</span><span class="activity-badge">Completed</span></div>
+                <div class="activity-row"><span class="activity-name"><span class="activity-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M4 9h10M9 4l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Grasp &amp; Hold</span><span class="activity-badge">82% score</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark" id="difference">
+      <div class="container">
+        <div class="section-head-row reveal">
+          <div>
+            <div class="eyebrow">Why AI-DRA stands apart</div>
+            <h2 class="section-heading">More than exercise videos. More practical than specialised hardware.</h2>
+          </div>
+          <p class="section-copy">AI-DRA's strongest advantage is the combination of accessible computer vision, connected support, and research-focused data in a single prototype.</p>
+        </div>
+
+        <div class="difference-grid">
+          <article class="difference-card reveal"><div class="difference-number">01</div><div class="difference-icon"><svg viewBox="0 0 22 22" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.7"/><circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.7"/></svg></div><h3>Uses devices people already have</h3><p>No wearable sensor setup, charging routine, or specialised camera is required for the intended experience.</p></article>
+          <article class="difference-card reveal"><div class="difference-number">02</div><div class="difference-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M3 11s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6Z" stroke="currentColor" stroke-width="1.7"/><path d="M11 8v6m-3-3h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><h3>Responds to movement, not only completion</h3><p>The system is being built around joint angles, range of motion, holds, repetitions, speed, and movement quality signals.</p></article>
+          <article class="difference-card reveal"><div class="difference-number">03</div><div class="difference-icon"><svg viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="9" r="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M3 19c.3-3.5 2-5.5 5-5.5s4.7 2 5 5.5M13 14c2.8 0 4.8 1.7 5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><h3>Connects the rehabilitation network</h3><p>Survivors, carers, and researchers each receive a purpose-built view instead of sharing one generic dashboard.</p></article>
+          <article class="difference-card reveal"><div class="difference-number">04</div><div class="difference-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m7 9V4m7 14v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m3 6 4-3 4 2 5-3 3 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Built to support evaluation</h3><p>Session, attempt, completion, engagement, and movement records can support quantitative analysis and future usability studies.</p></article>
+        </div>
+
+        <div class="comparison-wrap reveal" aria-label="Comparison of rehabilitation approaches">
+          <table class="comparison-table">
+            <thead><tr><th>Capability</th><th class="ai-column">AI-DRA</th><th>Video-only exercise apps</th><th>Wearable-based systems</th></tr></thead>
+            <tbody>
+              <tr><td>Real-time movement response</td><td class="ai-column"><span class="comparison-check">✓ Designed in</span></td><td class="comparison-limited">Usually limited</td><td>Often available</td></tr>
+              <tr><td>Special equipment required</td><td class="ai-column"><span class="comparison-check">✓ No wearable required</span></td><td>None</td><td class="comparison-limited">Typically yes</td></tr>
+              <tr><td>Carer connection</td><td class="ai-column"><span class="comparison-check">✓ Dedicated portal</span></td><td class="comparison-limited">Often absent</td><td>Varies</td></tr>
+              <tr><td>Research engagement monitoring</td><td class="ai-column"><span class="comparison-check">✓ Purpose-built</span></td><td class="comparison-limited">Basic analytics</td><td>Varies by product</td></tr>
+              <tr><td>Functional task orientation</td><td class="ai-column"><span class="comparison-check">✓ Included in exercise design</span></td><td>Varies</td><td>Varies</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="intelligence">
+      <div class="container intelligence-grid">
+        <div class="reveal">
+          <div class="eyebrow">Movement intelligence</div>
+          <h2 class="section-heading">From camera landmarks to rehabilitation feedback.</h2>
+          <p class="section-copy">AI-DRA does not need to store every camera frame. The system can translate live movement into smaller, meaningful rehabilitation measures and session records.</p>
+          <div class="pipeline">
+            <article class="pipeline-step"><span class="pipeline-index">01</span><div><h3>Detect body and hand landmarks</h3><p>MediaPipe-based tracking identifies the relevant shoulder, elbow, wrist, and hand points.</p></div></article>
+            <article class="pipeline-step"><span class="pipeline-index">02</span><div><h3>Interpret the exercise state</h3><p>Joint angles, position thresholds, timing, and movement stages determine whether a repetition is progressing correctly.</p></div></article>
+            <article class="pipeline-step"><span class="pipeline-index">03</span><div><h3>Guide the survivor live</h3><p>On-screen and optional spoken prompts explain when to raise, hold, return, slow down, or adjust.</p></div></article>
+            <article class="pipeline-step"><span class="pipeline-index">04</span><div><h3>Summarise the session</h3><p>Completion, accuracy, speed, range of motion, holds, and attempt states can contribute to a movement score and recommendation.</p></div></article>
+          </div>
+        </div>
+
+        <div class="intelligence-visual reveal">
+          <div class="intel-window">
+            <div class="intel-head"><strong>Session movement analysis</strong><span>Prototype data model</span></div>
+            <div class="intel-body">
+              <div class="intel-score-row">
+                <div class="intel-score"><label>Accuracy</label><strong>84%</strong></div>
+                <div class="intel-score"><label>Range of motion</label><strong>76°</strong></div>
+                <div class="intel-score"><label>Speed</label><strong>Steady</strong></div>
+              </div>
+              <div class="intel-chart">
+                <div class="intel-chart-title"><span>Movement quality across repetitions</span><span>Rep 1–8</span></div>
+                <svg class="line-chart" viewBox="0 0 480 140" preserveAspectRatio="none" aria-hidden="true">
+                  <defs><linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7a59e8" stop-opacity="0.24"/><stop offset="100%" stop-color="#7a59e8" stop-opacity="0"/></linearGradient></defs>
+                  <path class="line-chart-grid" d="M0 25H480M0 70H480M0 115H480"/>
+                  <path class="line-chart-area" d="M0 107 C50 100,65 84,115 90 S180 58,235 67 S310 39,355 48 S420 26,480 32 L480 140 L0 140Z"/>
+                  <path class="line-chart-path" d="M0 107 C50 100,65 84,115 90 S180 58,235 67 S310 39,355 48 S420 26,480 32"/>
+                  <circle class="line-chart-dot" cx="0" cy="107" r="5"/><circle class="line-chart-dot" cx="115" cy="90" r="5"/><circle class="line-chart-dot" cx="235" cy="67" r="5"/><circle class="line-chart-dot" cx="355" cy="48" r="5"/><circle class="line-chart-dot" cx="480" cy="32" r="5"/>
+                </svg>
+              </div>
+              <div class="intel-alerts">
+                <div class="intel-alert"><span>Completed repetitions</span><em>8 of 10</em></div>
+                <div class="intel-alert"><span>Repeated incomplete attempts</span><em>2 detected</em></div>
+                <div class="intel-alert"><span>Suggested next step</span><em>Repeat at current difficulty</em></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-soft" id="features">
+      <div class="container">
+        <div class="section-head-row reveal">
+          <div>
+            <div class="eyebrow">What the prototype contains</div>
+            <h2 class="section-heading">A substantial product foundation, not a single demo screen.</h2>
+          </div>
+          <p class="section-copy">The status labels below keep the landing page honest by distinguishing built interface foundations from the deeper movement intelligence still being completed.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal"><span class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 10.5 11 5l7 5.5V18a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1v-7.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span><span class="feature-status">Built foundation</span><h3>Survivor dashboard and navigation</h3><p>Welcome view, weekly progress, activity cards, quick actions, sessions, profile, history, reminders, and settings.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 5h14M4 11h14M4 17h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="feature-status">Built foundation</span><h3>Exercise library and guidance</h3><p>Exercise browsing, detail pages, demonstrations, preparation steps, and task-based activities such as Target Touch, Grasp &amp; Hold, and Lift &amp; Place.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><rect x="3" y="4" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.7"/><circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.7"/></svg></span><span class="feature-status">Working prototype</span><h3>Camera movement tracking</h3><p>Pose landmarks, arm selection, joint-angle calculation, hold timing, repetition counting, camera controls, and rule-based feedback.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7"/><path d="M3 19c.3-3.5 2-5.5 5-5.5s4.7 2 5 5.5M15 8h4m-2-2v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="feature-status">Built foundation</span><h3>Carer invitation and settings flows</h3><p>Invitation entry, pending acceptance, resend, edit, cancel, linked-survivor concepts, notifications, and profile, password, help, and preference pages.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m7 9V4m7 14v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="feature-status next">In development</span><h3>Research monitoring dashboard</h3><p>Dashboard, survivors, carers, notifications, exercises, and settings views focused on engagement, completion, abandonment, consistency, and system performance.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M11 3v16M3 11h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"/></svg></span><span class="feature-status next">Next intelligence layer</span><h3>Attempt states and movement scoring</h3><p>Completed, failed, and incomplete attempts; paused-session rules; live accuracy; movement score; compensation flags; summaries; and recommendations.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark" id="research">
+      <div class="container research-grid">
+        <div class="research-cards reveal" aria-label="Research dashboard preview">
+          <article class="research-card">
+            <div class="research-card-label">Research monitoring concept</div>
+            <div class="research-card-value">Engagement made measurable.</div>
+            <p>The dashboard is designed to support future quantitative evaluation without turning the project into a commercial administration system.</p>
+            <div class="research-progress">
+              <div class="research-progress-row"><span>Sessions completed</span><span class="research-track"><i style="width:78%"></i></span><strong>78%</strong></div>
+              <div class="research-progress-row"><span>Weekly consistency</span><span class="research-track"><i style="width:66%"></i></span><strong>66%</strong></div>
+              <div class="research-progress-row"><span>Exercise completion</span><span class="research-track"><i style="width:84%"></i></span><strong>84%</strong></div>
+            </div>
+          </article>
+          <article class="research-card"><div class="research-card-label">Primary question</div><div class="research-card-value">Who is engaging?</div><p>Participation frequency and usage patterns across the prototype.</p></article>
+          <article class="research-card"><div class="research-card-label">Primary question</div><div class="research-card-value">What gets completed?</div><p>Exercise uptake, session outcomes, and points of abandonment.</p></article>
+        </div>
+
+        <div class="reveal">
+          <div class="eyebrow">Research-led by design</div>
+          <h2 class="section-heading">Built to learn from real use, not only to look impressive in a demonstration.</h2>
+          <p class="section-copy">AI-DRA is a seed-funded research prototype. Its purpose is to explore how digital rehabilitation can be accessible, usable, and measurable for stroke survivors and the people supporting them.</p>
+          <div class="principles">
+            <article class="principle"><span class="principle-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M11 19s7-3.5 7-9V5l-7-2-7 2v5c0 5.5 7 9 7 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span><div><h3>Privacy-aware data design</h3><p>Prioritise meaningful movement and session measures rather than storing unnecessary raw camera data.</p></div></article>
+            <article class="principle"><span class="principle-icon"><svg viewBox="0 0 22 22" fill="none"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="9" r="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M3 19c.3-3.5 2-5.5 5-5.5s4.7 2 5 5.5M13 14c2.8 0 4.8 1.7 5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><h3>Co-design and usability focus</h3><p>Survivor, carer, and healthcare professional feedback can directly shape wording, interactions, accessibility, and workflow.</p></div></article>
+            <article class="principle"><span class="principle-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m7 9V4m7 14v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><h3>Transparent prototype evaluation</h3><p>Separate validated functionality from features still under development, then test both usability and technical performance.</p></div></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="journey">
+      <div class="container">
+        <div class="reveal">
+          <div class="eyebrow">The survivor journey</div>
+          <h2 class="section-heading">Designed to make each session feel clear, supported, and achievable.</h2>
+          <p class="section-copy">The interface reduces unnecessary steps and guides the survivor from preparation to reflection.</p>
+        </div>
+
+        <div class="journey">
+          <article class="journey-step reveal"><div class="journey-number">01</div><h3>Choose an exercise</h3><p>Browse assigned or recommended upper-limb and functional activities.</p></article>
+          <article class="journey-step reveal"><div class="journey-number">02</div><h3>Prepare safely</h3><p>Review simple instructions, positioning, camera setup, and audio preferences.</p></article>
+          <article class="journey-step reveal"><div class="journey-number">03</div><h3>Move with guidance</h3><p>Follow visual and optional spoken prompts while the system tracks the exercise.</p></article>
+          <article class="journey-step reveal"><div class="journey-number">04</div><h3>Review progress</h3><p>See session completion, movement measures, history, and the suggested next step.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="access">
+      <div class="container cta-shell reveal">
+        <div class="cta-content">
+          <div class="cta-kicker">Help shape the next stage</div>
+          <h2>Experience the AI-DRA prototype and contribute to more accessible rehabilitation.</h2>
+          <p>The project is preparing for continued development, co-design input, usability evaluation, and refinement of its movement intelligence.</p>
+          <div class="cta-meta">Research prototype • University of Derby • Not a substitute for clinical advice</div>
+        </div>
+        <div class="cta-actions">
+          <a class="button button-light" href="/register">Access prototype</a>
+          <a class="button button-ghost" href="#research">Explore the research</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="#top">
+            <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><circle cx="14" cy="6" r="3" fill="white"/><path d="M14 9.5v8.3M8.5 12.3 14 14l5.5-1.7M14 17.8l-4.2 5M14 17.8l4.2 5" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="brand-copy"><span class="brand-name">AI-DRA</span><span class="brand-sub">Digital Rehabilitation Assistant</span></span>
+          </a>
+          <p class="footer-intro">A University of Derby seed-funded research prototype exploring intelligent, accessible, and connected upper-limb rehabilitation for stroke survivors.</p>
+        </div>
+        <div>
+          <div class="footer-title">Platform</div>
+          <ul class="footer-links"><li><a href="#platform">Overview</a></li><li><a href="#ecosystem">Survivor and carer views</a></li><li><a href="#intelligence">Movement intelligence</a></li><li><a href="#features">Prototype status</a></li></ul>
+        </div>
+        <div>
+          <div class="footer-title">Project</div>
+          <ul class="footer-links"><li><a href="#difference">Why AI-DRA</a></li><li><a href="#research">Research approach</a></li><li><a href="#journey">How it works</a></li><li><a href="/login">Prototype sign in</a></li></ul>
+        </div>
+      </div>
+      <div class="footer-bottom"><span>© 2026 AI-DRA Project. All rights reserved.</span><span>University of Derby • School of Computing and College of Science and Engineering</span></div>
+    </div>
+  </footer>
+
+  <script>
+    const header = document.getElementById('siteHeader');
+    const menuButton = document.getElementById('menuButton');
+    const navLinks = document.getElementById('navLinks');
+
+    const setHeaderState = () => header.classList.toggle('scrolled', window.scrollY > 18);
+    setHeaderState();
+    window.addEventListener('scroll', setHeaderState, { passive: true });
+
+    menuButton.addEventListener('click', () => {
+      const open = menuButton.getAttribute('aria-expanded') === 'true';
+      menuButton.setAttribute('aria-expanded', String(!open));
+      menuButton.setAttribute('aria-label', open ? 'Open navigation' : 'Close navigation');
+      navLinks.classList.toggle('mobile-open', !open);
+      document.body.classList.toggle('nav-open', !open);
+    });
+
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.setAttribute('aria-label', 'Open navigation');
+        navLinks.classList.remove('mobile-open');
+        document.body.classList.remove('nav-open');
+      });
+    });
+
+    const ecosystemData = {
+      survivor: {
+        title: 'Clear guidance before, during, and after every session.',
+        description: 'The survivor journey is designed to reduce cognitive load, make exercises easier to follow, and turn progress into something visible and encouraging.',
+        items: [
+          'Accessible authentication, dashboard, exercise library, and profile settings.',
+          'Exercise demonstrations, step-by-step preparation, and live camera guidance.',
+          'Repetition counting, hold timing, session history, progress, and reminders.',
+          'Optional voice instructions, sound effects, and reduced-motion preferences.'
+        ],
+        avatar: 'WC', name: 'William Carter', role: 'Survivor dashboard', status: 'Ready for session',
+        cards: `
+          <div class="visual-card"><div class="visual-label">This week</div><div class="visual-number">4 / 5</div><div class="visual-detail">Sessions completed</div><div class="sparkline" aria-hidden="true"><i style="height:35%"></i><i style="height:54%"></i><i style="height:47%"></i><i style="height:70%"></i><i style="height:82%"></i></div></div>
+          <div class="visual-card light"><div class="visual-label">Next exercise</div><div class="visual-number">Target Touch</div><div class="visual-detail">10 repetitions</div></div>
+          <div class="visual-card light wide"><div class="visual-label">Recent activity</div><div class="activity-row"><span class="activity-name"><span class="activity-icon">↗</span>Lift &amp; Place</span><span class="activity-badge">Completed</span></div><div class="activity-row"><span class="activity-name"><span class="activity-icon">↗</span>Grasp &amp; Hold</span><span class="activity-badge">82% score</span></div></div>`
+      },
+      carer: {
+        title: 'Support progress without taking control away from the survivor.',
+        description: 'The carer portal focuses on visibility, encouragement, and permission-based connection rather than clinical decision-making.',
+        items: [
+          'Invite or link a survivor through a clear acceptance workflow.',
+          'Review recent activity, consistency, and exercise completion.',
+          'Receive relevant notifications and manage communication preferences.',
+          'Access profile, password, help, about, and notification settings.'
+        ],
+        avatar: 'PS', name: 'Preya Sharma', role: 'Carer portal', status: '1 survivor linked',
+        cards: `
+          <div class="visual-card"><div class="visual-label">Linked survivor</div><div class="visual-number">William</div><div class="visual-detail">Active this week</div><div class="sparkline" aria-hidden="true"><i style="height:52%"></i><i style="height:64%"></i><i style="height:58%"></i><i style="height:76%"></i><i style="height:88%"></i></div></div>
+          <div class="visual-card light"><div class="visual-label">Weekly consistency</div><div class="visual-number">80%</div><div class="visual-detail">4 of 5 sessions</div></div>
+          <div class="visual-card light wide"><div class="visual-label">Support actions</div><div class="activity-row"><span class="activity-name"><span class="activity-icon">✓</span>Invitation accepted</span><span class="activity-badge">Connected</span></div><div class="activity-row"><span class="activity-name"><span class="activity-icon">●</span>Session completed today</span><span class="activity-badge">View progress</span></div></div>`
+      },
+      research: {
+        title: 'See how the prototype is being used and where it needs to improve.',
+        description: 'The research dashboard is intentionally focused on engagement and evaluation rather than complex commercial administration.',
+        items: [
+          'Monitor survivors and carers participating in the prototype.',
+          'Compare sessions started, completed, paused, or ended early.',
+          'Review exercise uptake, repetition outcomes, and movement summaries.',
+          'Identify usage consistency, abandonment points, and system issues.'
+        ],
+        avatar: 'RM', name: 'Research Monitor', role: 'Evaluation dashboard', status: 'Prototype overview',
+        cards: `
+          <div class="visual-card"><div class="visual-label">Active survivors</div><div class="visual-number">24</div><div class="visual-detail">18 active this week</div><div class="sparkline" aria-hidden="true"><i style="height:42%"></i><i style="height:50%"></i><i style="height:61%"></i><i style="height:73%"></i><i style="height:86%"></i></div></div>
+          <div class="visual-card light"><div class="visual-label">Completion rate</div><div class="visual-number">78%</div><div class="visual-detail">Across recent sessions</div></div>
+          <div class="visual-card light wide"><div class="visual-label">Research signals</div><div class="activity-row"><span class="activity-name"><span class="activity-icon">↗</span>Target Touch engagement</span><span class="activity-badge">High</span></div><div class="activity-row"><span class="activity-name"><span class="activity-icon">!</span>Ended early sessions</span><span class="activity-badge">Review</span></div></div>`
+      }
+    };
+
+    const tabs = document.querySelectorAll('.ecosystem-tab');
+    const panel = document.getElementById('ecosystemPanel');
+    const title = document.getElementById('ecosystemTitle');
+    const description = document.getElementById('ecosystemDescription');
+    const list = document.getElementById('ecosystemList');
+    const visualAvatar = document.getElementById('visualAvatar');
+    const visualName = document.getElementById('visualName');
+    const visualRole = document.getElementById('visualRole');
+    const visualStatus = document.getElementById('visualStatus');
+    const visualCards = document.getElementById('visualCards');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const data = ecosystemData[tab.dataset.view];
+        tabs.forEach(item => item.setAttribute('aria-selected', String(item === tab)));
+        panel.setAttribute('aria-labelledby', tab.id);
+        title.textContent = data.title;
+        description.textContent = data.description;
+        list.innerHTML = data.items.map(item => `<li>${item}</li>`).join('');
+        visualAvatar.textContent = data.avatar;
+        visualName.textContent = data.name;
+        visualRole.textContent = data.role;
+        visualStatus.textContent = data.status;
+        visualCards.innerHTML = data.cards;
+      });
+    });
+
+    const revealItems = document.querySelectorAll('.reveal:not(.visible)');
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -30px' });
+      revealItems.forEach(item => observer.observe(item));
+    } else {
+      revealItems.forEach(item => item.classList.add('visible'));
+    }
+  </script>
+</body>
+</html>
