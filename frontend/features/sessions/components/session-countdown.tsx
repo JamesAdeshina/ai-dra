@@ -40,6 +40,7 @@ const COUNTDOWN_STEPS: CountdownStep[] = [
 ];
 
 const STEP_DURATION_MS = 1000;
+const COMPLETION_DELAY_MS = 250;
 
 export function SessionCountdown({
   isOpen,
@@ -52,46 +53,44 @@ export function SessionCountdown({
   const completionCalledRef =
     useRef(false);
 
+  const onCompleteRef =
+    useRef(onComplete);
+
+  const countdownRunIdRef =
+    useRef(0);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
   const step =
     COUNTDOWN_STEPS[stepIndex];
 
-  const particles = useMemo(
-    () =>
-      Array.from(
-        {
-          length:
-            step?.value === "GO"
-              ? 24
-              : 16,
-        },
-        (_, index) => {
-          const count =
-            step?.value === "GO"
-              ? 24
-              : 16;
+  const particles = useMemo(() => {
+    const isGo = step?.value === "GO";
+    const particleCount = isGo ? 24 : 16;
 
-          const angle =
-            (360 / count) * index;
+    return Array.from(
+      { length: particleCount },
+      (_, index) => {
+        const angle =
+          (360 / particleCount) * index;
 
-          const distance =
-            step?.value === "GO"
-              ? 170 +
-                ((index * 29) % 90)
-              : 110 +
-                ((index * 23) % 70);
+        const distance = isGo
+          ? 170 + ((index * 29) % 90)
+          : 110 + ((index * 23) % 70);
 
-          const delay =
-            (index * 17) % 70;
+        const delay =
+          (index * 17) % 70;
 
-          return {
-            angle,
-            distance,
-            delay,
-          };
-        }
-      ),
-    [step?.value]
-  );
+        return {
+          angle,
+          distance,
+          delay,
+        };
+      }
+    );
+  }, [step?.value]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -100,22 +99,53 @@ export function SessionCountdown({
       return;
     }
 
-    setStepIndex(0);
+    countdownRunIdRef.current += 1;
+
+    const currentRunId =
+      countdownRunIdRef.current;
+
     completionCalledRef.current = false;
+    setStepIndex(0);
 
     const timers: number[] = [];
 
+    /*
+     * The countdown-beep.mp3 file already contains
+     * the full 3, 2, 1, GO audio sequence.
+     *
+     * Play it once only. Do not replay it for every
+     * countdown step.
+     */
+    const audioTimer = window.setTimeout(() => {
+      if (
+        audioEnabled &&
+        countdownRunIdRef.current ===
+          currentRunId
+      ) {
+        void audioService.playEffect(
+          "countdownBeep"
+        );
+      }
+    }, 50);
+
+    timers.push(audioTimer);
+
     COUNTDOWN_STEPS.forEach(
       (_, index) => {
+        if (index === 0) {
+          return;
+        }
+
         const timer =
           window.setTimeout(() => {
-            setStepIndex(index);
-
-            if (audioEnabled) {
-              void audioService.playEffect(
-                "countdownBeep"
-              );
+            if (
+              countdownRunIdRef.current !==
+              currentRunId
+            ) {
+              return;
             }
+
+            setStepIndex(index);
           }, index * STEP_DURATION_MS);
 
         timers.push(timer);
@@ -125,14 +155,20 @@ export function SessionCountdown({
     const completionTimer =
       window.setTimeout(() => {
         if (
+          countdownRunIdRef.current !==
+            currentRunId ||
           completionCalledRef.current
         ) {
           return;
         }
 
         completionCalledRef.current = true;
-        onComplete();
-      }, COUNTDOWN_STEPS.length * STEP_DURATION_MS);
+        onCompleteRef.current();
+      },
+      COUNTDOWN_STEPS.length *
+        STEP_DURATION_MS +
+        COMPLETION_DELAY_MS
+      );
 
     timers.push(completionTimer);
 
@@ -141,11 +177,7 @@ export function SessionCountdown({
         window.clearTimeout(timer);
       });
     };
-  }, [
-    audioEnabled,
-    isOpen,
-    onComplete,
-  ]);
+  }, [audioEnabled, isOpen]);
 
   if (!isOpen || !step) {
     return null;
@@ -231,10 +263,7 @@ export function SessionCountdown({
           />
 
           {particles.map(
-            (
-              particle,
-              index
-            ) => (
+            (particle, index) => (
               <span
                 key={`${stepIndex}-${index}`}
                 className="countdown-particle absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-white shadow-[0_0_14px_white]"
@@ -253,7 +282,7 @@ export function SessionCountdown({
           <span
             key={`value-${stepIndex}`}
             className={[
-              "countdown-number relative z-10 font-black leading-none",
+              "countdown-number relative z-20 block font-black leading-none text-white",
               "text-[clamp(7rem,26vw,15rem)]",
               isGo
                 ? "countdown-go text-[clamp(5.5rem,22vw,11rem)]"
@@ -275,12 +304,13 @@ export function SessionCountdown({
       <style jsx>{`
         .countdown-ring {
           animation: ring-progress
-            ${STEP_DURATION_MS - 100}ms linear
+            ${STEP_DURATION_MS - 80}ms linear
             forwards;
         }
 
         .countdown-number {
-          opacity: 0;
+          opacity: 1;
+          transform: scale(1);
           text-shadow:
             0 0 12px
               rgba(255, 255, 255, 0.7),
@@ -288,23 +318,22 @@ export function SessionCountdown({
               rgba(167, 139, 250, 0.95),
             0 0 80px
               rgba(124, 58, 237, 0.75);
-          animation: number-burst
-            ${STEP_DURATION_MS - 100}ms
+          animation: number-enter
+            650ms
             cubic-bezier(0.22, 1, 0.36, 1)
-            forwards;
+            both;
         }
 
         .countdown-go {
-          color: transparent;
-          background: linear-gradient(
-            180deg,
-            #ffffff 0%,
-            #ddd6fe 42%,
-            #a78bfa 100%
-          );
-          background-clip: text;
-          -webkit-background-clip: text;
-          animation-name: go-burst;
+          color: white;
+          text-shadow:
+            0 0 16px
+              rgba(255, 255, 255, 0.9),
+            0 0 45px
+              rgba(167, 139, 250, 1),
+            0 0 90px
+              rgba(124, 58, 237, 0.9);
+          animation-name: go-enter;
         }
 
         .countdown-pulse {
@@ -323,10 +352,10 @@ export function SessionCountdown({
         }
 
         .countdown-message {
-          opacity: 0;
-          transform: translateY(10px);
+          opacity: 1;
+          transform: translateY(0);
           animation: message-reveal
-            420ms ease forwards;
+            420ms ease both;
         }
 
         @keyframes ring-progress {
@@ -339,64 +368,55 @@ export function SessionCountdown({
           }
         }
 
-        @keyframes number-burst {
+        @keyframes number-enter {
           0% {
             opacity: 0;
-            transform: scale(0.25)
-              rotate(-8deg);
-            filter: blur(14px);
+            transform: scale(0.35)
+              rotate(-5deg);
+            filter: blur(10px);
           }
 
-          28% {
+          45% {
             opacity: 1;
-            transform: scale(1.15)
-              rotate(2deg);
+            transform: scale(1.16)
+              rotate(1deg);
             filter: blur(0);
           }
 
-          58% {
-            transform: scale(0.96)
-              rotate(0);
-          }
-
-          78% {
+          72% {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(0.96);
           }
 
           100% {
-            opacity: 0;
-            transform: scale(1.55);
-            filter: blur(8px);
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0);
           }
         }
 
-        @keyframes go-burst {
+        @keyframes go-enter {
           0% {
             opacity: 0;
-            transform: scale(0.2);
-            filter: blur(16px);
+            transform: scale(0.25);
+            filter: blur(12px);
           }
 
-          32% {
+          50% {
             opacity: 1;
-            transform: scale(1.18);
+            transform: scale(1.2);
             filter: blur(0);
-          }
-
-          55% {
-            transform: scale(0.94);
           }
 
           75% {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(0.95);
           }
 
           100% {
-            opacity: 0;
-            transform: scale(1.9);
-            filter: blur(10px);
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0);
           }
         }
 
@@ -439,6 +459,11 @@ export function SessionCountdown({
         }
 
         @keyframes message-reveal {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+
           to {
             opacity: 1;
             transform: translateY(0);
@@ -455,6 +480,13 @@ export function SessionCountdown({
           .countdown-message {
             animation-duration: 1ms;
             animation-iteration-count: 1;
+          }
+
+          .countdown-number,
+          .countdown-message {
+            opacity: 1;
+            transform: none;
+            filter: none;
           }
         }
       `}</style>

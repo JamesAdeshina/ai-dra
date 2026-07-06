@@ -8,9 +8,26 @@ import {
   useState,
 } from "react";
 import Image from "next/image";
-import { Timer } from "lucide-react";
+import { Play, Timer } from "lucide-react";
+
+import {
+  READY_PROMPT_SAFE_DELAY_MS,
+  TRACKING_LOST_DELAY_MS,
+  audioService,
+  useAudioPreferences,
+  useBackgroundMusic,
+} from "@/features/audio";
+
+import {
+  AttemptMetricTracker,
+  calculateAccuracyScore,
+  calculateMovementScore,
+  type AttemptMetricSummary,
+} from "@/features/sessions/scoring";
 
 import { CameraPlaceholder } from "./camera-placeholder";
+import { AudioPreferencesModal } from "./audio-preferences-modal";
+import { SessionCountdown } from "./session-countdown";
 import { LiveFeedbackCard } from "./live-feedback-card";
 import { RangeOfMotionCard } from "./range-of-motion-card";
 import { RepProgressCard } from "./rep-progress-card";
@@ -62,6 +79,12 @@ import {
   updateButtonFasteningCounter,
 } from "@/features/pose/utils/button-fastening-counter";
 
+import { SupportModal } from "./support-modal";
+
+import type {
+  SupportReason,
+} from "@/features/support/nhs-resource-config";
+
 type SessionViewProps = {
   exercise: {
     slug: string;
@@ -106,6 +129,7 @@ type CompletedAttemptSnapshot = {
   durationMs: number;
   speedMetrics: MovementSpeedMetrics;
   handTracking: HandTrackingSnapshot;
+  metricSummary: AttemptMetricSummary;
 };
 
 export function SessionView({ exercise }: SessionViewProps) {
@@ -116,10 +140,42 @@ export function SessionView({ exercise }: SessionViewProps) {
     [exercise.slug]
   );
 
+  const [
+    showSupportModal,
+    setShowSupportModal,
+  ] = useState(false);
+
+  const [
+    supportReason,
+    setSupportReason,
+  ] = useState<SupportReason>(
+    "GENERAL_DIFFICULTY"
+  );
+
   const initialRepState: RepState =
     rule.primaryMetric === "hand-closure"
       ? "OPEN"
       : "RESTING";
+
+  const {
+    preferences,
+    isLoaded: areAudioPreferencesLoaded,
+    hasConfiguredAudio,
+    updatePreference: updateAudioPreference,
+    savePreferences,
+    continueWithoutAudio,
+  } = useAudioPreferences();
+
+  const {
+    fadeIn: fadeInSessionMusic,
+    pause: pauseSessionMusic,
+    resume: resumeSessionMusic,
+    fadeOut: fadeOutSessionMusic,
+  } = useBackgroundMusic({
+    enabled:
+      preferences.backgroundMusicEnabled,
+    musicKey: "sessionBackground",
+  });
 
   const [angle, setAngle] = useState(0);
   const [repCount, setRepCount] = useState(0);
@@ -127,6 +183,19 @@ export function SessionView({ exercise }: SessionViewProps) {
     rule.feedback.start
   );
   const [holdProgress, setHoldProgress] = useState(0);
+
+  const [isCameraReady, setIsCameraReady] =
+    useState(false);
+  const [isTrackingReady, setIsTrackingReady] =
+    useState(false);
+  const [hasStartInteraction, setHasStartInteraction] =
+    useState(false);
+  const [showCountdown, setShowCountdown] =
+    useState(false);
+  const [hasSessionStarted, setHasSessionStarted] =
+    useState(false);
+  const [isRepCountingEnabled, setIsRepCountingEnabled] =
+    useState(false);
 
   const [isPaused, setIsPaused] = useState(false);
   const [showEndModal, setShowEndModal] =
@@ -166,6 +235,18 @@ export function SessionView({ exercise }: SessionViewProps) {
   const attemptNumberRef = useRef(0);
   const attemptStartedAtRef = useRef(Date.now());
 
+  const repCountingEnabledRef = useRef(false);
+  const halfwayPlayedRef = useRef(false);
+  const holdCompleteArmedRef = useRef(true);
+  const trackingLossEventActiveRef = useRef(false);
+  const trackingLossTimerRef =
+    useRef<number | null>(null);
+  const sessionCompletePlayedRef =
+    useRef(false);
+  const countdownStartedRef = useRef(false);
+  const readyDelayTimerRef =
+    useRef<number | null>(null);
+
   const latestHandsRef = useRef<TrackedHand[]>([]);
 
   const sessionIdRef =
@@ -181,7 +262,48 @@ export function SessionView({ exercise }: SessionViewProps) {
     Promise.resolve()
   );
 
+  const [
+  latestAccuracyScore,
+  setLatestAccuracyScore,
+  ] = useState<number | null>(null);
+
+  const [
+    latestMovementScore,
+    setLatestMovementScore,
+  ] = useState<number | null>(null);
+
+  const [
+    latestSpeedScore,
+    setLatestSpeedScore,
+  ] = useState<number | null>(null);
+
+  const [
+    latestSpeedClassification,
+    setLatestSpeedClassification,
+  ] = useState<
+    | "SLOW"
+    | "CONTROLLED"
+    | "FAST"
+    | "NOT_ASSESSED"
+  >("NOT_ASSESSED");
+
+  const consecutiveDifficultyAttemptsRef =
+    useRef(0);
+
+  const supportShownRef =
+    useRef(false);
+
   const elapsedSecondsRef = useRef(0);
+
+  const attemptMetricTrackerRef =
+    useRef<AttemptMetricTracker | null>(
+      null
+    );
+
+  if (!attemptMetricTrackerRef.current) {
+    attemptMetricTrackerRef.current =
+      new AttemptMetricTracker();
+  }
 
   const speedTrackerRef =
     useRef<MovementSpeedTracker | null>(null);
@@ -254,10 +376,16 @@ export function SessionView({ exercise }: SessionViewProps) {
     elapsedSecondsRef.current = elapsedSeconds;
   }, [elapsedSeconds]);
 
+  useEffect(() => {
+    repCountingEnabledRef.current =
+      isRepCountingEnabled;
+  }, [isRepCountingEnabled]);
+
   const addSpeedSample = useCallback(
     (value: number) => {
       if (
         isPaused ||
+        !repCountingEnabledRef.current ||
         sessionFinalizedRef.current ||
         !Number.isFinite(value)
       ) {
@@ -271,6 +399,35 @@ export function SessionView({ exercise }: SessionViewProps) {
     },
     [isPaused]
   );
+
+  const recordAttemptMetricSample =
+    useCallback(() => {
+      if (
+        isPaused ||
+        !repCountingEnabledRef.current ||
+        sessionFinalizedRef.current
+      ) {
+        return;
+      }
+
+      const metrics =
+        latestMetricsRef.current;
+
+      attemptMetricTrackerRef.current?.addSample({
+        angle: metrics.angle,
+        reachValue: metrics.reachValue,
+        wristHeight: metrics.wristHeight,
+        wristX: metrics.wristX,
+        closureRatio: metrics.closureRatio,
+        pinchRatio: metrics.pinchRatio,
+        holdProgress,
+        isTracking: isTrackingReady,
+      });
+    }, [
+      holdProgress,
+      isPaused,
+      isTrackingReady,
+    ]);
 
   const getSessionSpeedSummary =
     useCallback(() => {
@@ -357,7 +514,7 @@ export function SessionView({ exercise }: SessionViewProps) {
         totalMovementDistance:
           roundMetric(totalDistance),
       };
-    }, []);
+    }, [recordAttemptMetricSample]);
 
   const getDetectedHandDetails =
     useCallback(() => {
@@ -532,6 +689,113 @@ export function SessionView({ exercise }: SessionViewProps) {
         const metrics =
           latestMetricsRef.current;
 
+        const scoringInput = {
+          exerciseSlug: exercise.slug,
+          rule,
+          metrics:
+            snapshot.metricSummary,
+          speedMetrics:
+            snapshot.speedMetrics,
+          completed: true,
+          activeSide:
+            handDetails.activeHand,
+          prescribedSide: null,
+        } as const;
+
+        const accuracy =
+          calculateAccuracyScore(
+            scoringInput
+          );
+
+        const movement =
+          calculateMovementScore({
+            input: scoringInput,
+            accuracy,
+          });
+
+        setLatestAccuracyScore(
+          accuracy.score
+        );
+
+        setLatestMovementScore(
+          movement.score
+        );
+
+        setLatestSpeedScore(
+          movement.breakdown.speed
+        );
+
+        setLatestSpeedClassification(
+          movement.speedClassification
+        );
+
+        const trackingRatio =
+          snapshot.metricSummary.trackingFrames > 0
+            ? snapshot.metricSummary.trackedFrames /
+              snapshot.metricSummary.trackingFrames
+            : 0;
+
+        const rangeOfMotionScore =
+          accuracy.components.find(
+            (component) =>
+              component.key === "rangeOfMotion" &&
+              component.available
+          )?.score ?? null;
+
+        let detectedSupportReason:
+          | SupportReason
+          | null = null;
+
+        if (trackingRatio < 0.7) {
+          detectedSupportReason =
+            "TRACKING_DIFFICULTY";
+        } else if (
+          rangeOfMotionScore !== null &&
+          rangeOfMotionScore < 60
+        ) {
+          detectedSupportReason =
+            "LOW_RANGE_OF_MOTION";
+        } else if (accuracy.score < 70) {
+          detectedSupportReason =
+            "LOW_ACCURACY";
+        } else if (movement.score < 70) {
+          detectedSupportReason =
+            "LOW_MOVEMENT_SCORE";
+        } else if (
+          movement.speedClassification === "FAST" &&
+          movement.breakdown.speed < 60
+        ) {
+          detectedSupportReason =
+            "FAST_MOVEMENT";
+        } else if (
+          movement.speedClassification === "SLOW" &&
+          movement.breakdown.speed < 60
+        ) {
+          detectedSupportReason =
+            "SLOW_MOVEMENT";
+        }
+
+        if (detectedSupportReason) {
+          consecutiveDifficultyAttemptsRef.current += 1;
+        } else {
+          consecutiveDifficultyAttemptsRef.current = 0;
+        }
+
+        const shouldShowAutomaticSupport =
+          detectedSupportReason !== null &&
+          consecutiveDifficultyAttemptsRef.current >= 2 &&
+          !supportShownRef.current &&
+          snapshot.completedRepNumber <
+            rule.targetReps;
+
+        if (shouldShowAutomaticSupport) {
+          supportShownRef.current = true;
+          setSupportReason(
+            detectedSupportReason
+          );
+          setShowSupportModal(true);
+        }
+
         const request: SaveExerciseAttemptInput = {
           sessionId,
 
@@ -577,6 +841,73 @@ export function SessionView({ exercise }: SessionViewProps) {
               metrics.closureRatio,
             pinchRatio:
               metrics.pinchRatio,
+
+            angleStart:
+              snapshot.metricSummary
+                .angle.start,
+            angleEnd:
+              snapshot.metricSummary
+                .angle.end,
+            angleMinimum:
+              snapshot.metricSummary
+                .angle.minimum,
+            angleMaximum:
+              snapshot.metricSummary
+                .angle.maximum,
+
+            reachMinimum:
+              snapshot.metricSummary
+                .reachValue.minimum,
+            reachMaximum:
+              snapshot.metricSummary
+                .reachValue.maximum,
+
+            wristHeightMinimum:
+              snapshot.metricSummary
+                .wristHeight.minimum,
+            wristHeightMaximum:
+              snapshot.metricSummary
+                .wristHeight.maximum,
+
+            closureMinimum:
+              snapshot.metricSummary
+                .closureRatio.minimum,
+            closureMaximum:
+              snapshot.metricSummary
+                .closureRatio.maximum,
+
+            pinchMinimum:
+              snapshot.metricSummary
+                .pinchRatio.minimum,
+            pinchMaximum:
+              snapshot.metricSummary
+                .pinchRatio.maximum,
+
+            holdProgress:
+              snapshot.metricSummary
+                .holdProgress,
+
+            sequenceCompleted:
+              snapshot.metricSummary
+                .sequenceCompleted,
+
+            returnedToStart:
+              snapshot.metricSummary
+                .returnedToStart,
+
+            trackingFrames:
+              snapshot.metricSummary
+                .trackingFrames,
+
+            trackedFrames:
+              snapshot.metricSummary
+                .trackedFrames,
+
+            scoringVersion:
+              "prototype-v1",
+
+            thresholdsAreProvisional:
+              true,
           },
 
           speedMetrics: {
@@ -610,7 +941,8 @@ export function SessionView({ exercise }: SessionViewProps) {
             unit:
               "normalised-units-per-second",
 
-            speedClassification: null,
+            speedClassification:
+              movement.speedClassification,
           },
 
           trackingContext: {
@@ -678,8 +1010,10 @@ export function SessionView({ exercise }: SessionViewProps) {
                 .totalHandFrames,
           },
 
-          accuracyScore: null,
-          movementScore: null,
+          accuracyScore:
+            accuracy.score,
+          movementScore:
+            movement.score,
         };
 
         try {
@@ -699,15 +1033,89 @@ export function SessionView({ exercise }: SessionViewProps) {
       },
       [
         exercise.slug,
-        getDetectedHandDetails,
-        rule.primaryMetric,
-        rule.tracker,
+        rule,
         waitForSessionId,
       ]
     );
 
+  const handleHoldProgressChange =
+    useCallback(
+      (nextProgress: number) => {
+        const safeProgress = Math.min(
+          1,
+          Math.max(0, nextProgress)
+        );
+
+        setHoldProgress((previous) =>
+          previous === safeProgress
+            ? previous
+            : safeProgress
+        );
+
+        if (
+          safeProgress >= 1 &&
+          holdCompleteArmedRef.current
+        ) {
+          holdCompleteArmedRef.current = false;
+
+          if (
+            preferences.soundEffectsEnabled
+          ) {
+            void audioService.playEffect(
+              "holdComplete"
+            );
+          }
+        }
+
+        if (safeProgress < 0.2) {
+          holdCompleteArmedRef.current = true;
+        }
+      },
+      [preferences.soundEffectsEnabled]
+    );
+
+  const playSessionCompleteSequence =
+    useCallback(async () => {
+      if (sessionCompletePlayedRef.current) {
+        return;
+      }
+
+      sessionCompletePlayedRef.current = true;
+      repCountingEnabledRef.current = false;
+      setIsRepCountingEnabled(false);
+
+      await fadeOutSessionMusic();
+
+      if (preferences.soundEffectsEnabled) {
+        await audioService.playEffect(
+          "sessionComplete"
+        );
+      }
+
+      if (preferences.voicePromptsEnabled) {
+        await audioService.playVoice(
+          "sessionComplete",
+          {
+            priority: 4,
+            interruptLowerPriority: true,
+          }
+        );
+      }
+    }, [
+      fadeOutSessionMusic,
+      preferences.soundEffectsEnabled,
+      preferences.voicePromptsEnabled,
+    ]);
+
   const updateRepCount = useCallback(
     (reps: number) => {
+      if (
+        !repCountingEnabledRef.current ||
+        sessionCompletePlayedRef.current
+      ) {
+        return;
+      }
+
       const previousReps =
         repCountRef.current;
 
@@ -720,6 +1128,44 @@ export function SessionView({ exercise }: SessionViewProps) {
 
       if (reps <= previousReps) {
         return;
+      }
+
+      const isFinalRep =
+        reps >= rule.targetReps;
+
+      if (isFinalRep) {
+        repCountingEnabledRef.current = false;
+        setIsRepCountingEnabled(false);
+      } else if (
+        preferences.soundEffectsEnabled
+      ) {
+        void audioService.playEffect(
+          "repComplete"
+        );
+      }
+
+      const halfwayTarget = Math.ceil(
+        rule.targetReps / 2
+      );
+
+      if (
+        !isFinalRep &&
+        !halfwayPlayedRef.current &&
+        reps >= halfwayTarget
+      ) {
+        halfwayPlayedRef.current = true;
+
+        if (
+          preferences.voicePromptsEnabled
+        ) {
+          void audioService.playVoice(
+            "halfwayThere",
+            {
+              priority: 1,
+              interruptLowerPriority: false,
+            }
+          );
+        }
       }
 
       const completedAtMs = Date.now();
@@ -753,6 +1199,13 @@ export function SessionView({ exercise }: SessionViewProps) {
           attemptTotalHandFramesRef.current,
       };
 
+      attemptMetricTrackerRef.current?.markSequenceCompleted();
+      attemptMetricTrackerRef.current?.markReturnedToStart();
+
+      const metricSummary =
+        attemptMetricTrackerRef.current?.getSummary() ??
+        createEmptyAttemptMetricSummary();
+
       const snapshot: CompletedAttemptSnapshot = {
         attemptNumber:
           attemptNumberRef.current,
@@ -764,9 +1217,11 @@ export function SessionView({ exercise }: SessionViewProps) {
         durationMs,
         speedMetrics,
         handTracking,
+        metricSummary,
       };
 
       speedTrackerRef.current?.reset();
+      attemptMetricTrackerRef.current?.reset();
       attemptActiveHandTrackerRef.current?.reset();
       attemptSupportHandTrackerRef.current?.reset();
       attemptBilateralFramesRef.current = 0;
@@ -790,6 +1245,9 @@ export function SessionView({ exercise }: SessionViewProps) {
               );
 
               setIsPaused(true);
+
+              await playSessionCompleteSequence();
+
               setShowEndModal(true);
             }
           })
@@ -803,6 +1261,9 @@ export function SessionView({ exercise }: SessionViewProps) {
     [
       completeDatabaseSession,
       persistCompletedAttempt,
+      playSessionCompleteSequence,
+      preferences.soundEffectsEnabled,
+      preferences.voicePromptsEnabled,
       rule.targetReps,
     ]
   );
@@ -811,6 +1272,7 @@ export function SessionView({ exercise }: SessionViewProps) {
     useCallback(() => {
       if (
         isPaused ||
+        !repCountingEnabledRef.current ||
         rule.primaryMetric !==
           "wrist-height"
       ) {
@@ -872,11 +1334,28 @@ export function SessionView({ exercise }: SessionViewProps) {
         sessionIdRef.current;
 
       if (!sessionId) {
-        setIsPaused(
-          (current) => !current
-        );
+        const nextPausedState = !isPaused;
+
+        setIsPaused(nextPausedState);
+
+        if (nextPausedState) {
+          if (
+            preferences.soundEffectsEnabled
+          ) {
+            void audioService.playEffect(
+              "pause"
+            );
+          }
+
+          pauseSessionMusic();
+        } else if (
+          preferences.backgroundMusicEnabled
+        ) {
+          void resumeSessionMusic();
+        }
 
         speedTrackerRef.current?.reset();
+        attemptMetricTrackerRef.current?.reset();
         attemptStartedAtRef.current =
           Date.now();
 
@@ -898,6 +1377,7 @@ export function SessionView({ exercise }: SessionViewProps) {
           });
 
           speedTrackerRef.current?.reset();
+          attemptMetricTrackerRef.current?.reset();
           attemptActiveHandTrackerRef.current?.reset();
           attemptSupportHandTrackerRef.current?.reset();
           attemptBilateralFramesRef.current = 0;
@@ -907,6 +1387,12 @@ export function SessionView({ exercise }: SessionViewProps) {
             Date.now();
 
           setIsPaused(false);
+
+          if (
+            preferences.backgroundMusicEnabled
+          ) {
+            void resumeSessionMusic();
+          }
         } else {
           const handDetails =
             getDetectedHandDetails();
@@ -948,12 +1434,23 @@ export function SessionView({ exercise }: SessionViewProps) {
           });
 
           speedTrackerRef.current?.reset();
+          attemptMetricTrackerRef.current?.reset();
           attemptActiveHandTrackerRef.current?.reset();
           attemptSupportHandTrackerRef.current?.reset();
           attemptBilateralFramesRef.current = 0;
           attemptTotalHandFramesRef.current = 0;
 
           setIsPaused(true);
+
+          if (
+            preferences.soundEffectsEnabled
+          ) {
+            void audioService.playEffect(
+              "pause"
+            );
+          }
+
+          pauseSessionMusic();
         }
       } catch (error) {
         console.error(
@@ -967,12 +1464,18 @@ export function SessionView({ exercise }: SessionViewProps) {
     }, [
       getDetectedHandDetails,
       isPaused,
+      pauseSessionMusic,
+      preferences.backgroundMusicEnabled,
+      preferences.soundEffectsEnabled,
+      resumeSessionMusic,
     ]);
 
   const handleAngleChange =
     useCallback((newAngle: number) => {
       latestMetricsRef.current.angle =
         newAngle;
+
+      recordAttemptMetricSample();
 
       setAngle((previous) =>
         previous === newAngle
@@ -986,6 +1489,7 @@ export function SessionView({ exercise }: SessionViewProps) {
       (newReachValue: number) => {
         if (
           isPaused ||
+          !repCountingEnabledRef.current ||
           rule.primaryMetric !==
             "wrist-reach"
         ) {
@@ -999,6 +1503,7 @@ export function SessionView({ exercise }: SessionViewProps) {
         latestMetricsRef.current.reachValue =
           newReachValue;
 
+        recordAttemptMetricSample();
         addSpeedSample(newReachValue);
 
         const result =
@@ -1028,6 +1533,7 @@ export function SessionView({ exercise }: SessionViewProps) {
       [
         addSpeedSample,
         isPaused,
+        recordAttemptMetricSample,
         rule,
         updateRepCount,
       ]
@@ -1036,12 +1542,17 @@ export function SessionView({ exercise }: SessionViewProps) {
   const handleWristHeightChange =
     useCallback(
       (newWristHeight: number) => {
-        if (isPaused) {
+        if (
+          isPaused ||
+          !repCountingEnabledRef.current
+        ) {
           return;
         }
 
         latestMetricsRef.current.wristHeight =
           newWristHeight;
+
+        recordAttemptMetricSample();
 
         if (
           rule.primaryMetric ===
@@ -1055,6 +1566,7 @@ export function SessionView({ exercise }: SessionViewProps) {
       [
         addSpeedSample,
         isPaused,
+        recordAttemptMetricSample,
         rule.primaryMetric,
         updateLiftPlaceRepCounter,
       ]
@@ -1063,17 +1575,22 @@ export function SessionView({ exercise }: SessionViewProps) {
   const handleWristXChange =
     useCallback(
       (newWristX: number) => {
-        if (isPaused) {
+        if (
+          isPaused ||
+          !repCountingEnabledRef.current
+        ) {
           return;
         }
 
         latestMetricsRef.current.wristX =
           newWristX;
 
+        recordAttemptMetricSample();
         updateLiftPlaceRepCounter();
       },
       [
         isPaused,
+        recordAttemptMetricSample,
         updateLiftPlaceRepCounter,
       ]
     );
@@ -1081,7 +1598,10 @@ export function SessionView({ exercise }: SessionViewProps) {
   const handleHandsChange =
     useCallback(
       (hands: TrackedHand[]) => {
-        if (isPaused) {
+        if (
+          isPaused ||
+          !repCountingEnabledRef.current
+        ) {
           return;
         }
 
@@ -1142,12 +1662,17 @@ export function SessionView({ exercise }: SessionViewProps) {
   const handlePinchChange =
     useCallback(
       (newPinchRatio: number) => {
-        if (isPaused) {
+        if (
+          isPaused ||
+          !repCountingEnabledRef.current
+        ) {
           return;
         }
 
         latestMetricsRef.current.pinchRatio =
           newPinchRatio;
+
+        recordAttemptMetricSample();
 
         if (
           rule.primaryMetric !==
@@ -1188,30 +1713,34 @@ export function SessionView({ exercise }: SessionViewProps) {
             : result.feedback
         );
 
-        setHoldProgress((previous) =>
-          previous ===
+        handleHoldProgressChange(
           result.holdProgress
-            ? previous
-            : result.holdProgress
         );
       },
       [
         addSpeedSample,
         isPaused,
+        recordAttemptMetricSample,
         rule.primaryMetric,
         updateRepCount,
+        handleHoldProgressChange,
       ]
     );
 
   const handleClosureChange =
     useCallback(
       (newClosureRatio: number) => {
-        if (isPaused) {
+        if (
+          isPaused ||
+          !repCountingEnabledRef.current
+        ) {
           return;
         }
 
         latestMetricsRef.current.closureRatio =
           newClosureRatio;
+
+        recordAttemptMetricSample();
 
         if (
           rule.primaryMetric ===
@@ -1299,19 +1828,18 @@ export function SessionView({ exercise }: SessionViewProps) {
             : result.feedback
         );
 
-        setHoldProgress((previous) =>
-          previous ===
-          (result.holdProgress ?? 0)
-            ? previous
-            : result.holdProgress ?? 0
+        handleHoldProgressChange(
+          result.holdProgress ?? 0
         );
       },
       [
         addSpeedSample,
         isPaused,
+        recordAttemptMetricSample,
         rule,
         updateLiftPlaceRepCounter,
         updateRepCount,
+        handleHoldProgressChange,
       ]
     );
 
@@ -1429,6 +1957,10 @@ export function SessionView({ exercise }: SessionViewProps) {
 
       speedTrackerRef.current?.reset();
 
+      repCountingEnabledRef.current = false;
+      setIsRepCountingEnabled(false);
+      audioService.stopAllAudio();
+
       setIsSpeaking(false);
       setIsPaused(true);
       setShowEndConfirmModal(false);
@@ -1437,6 +1969,7 @@ export function SessionView({ exercise }: SessionViewProps) {
 
   const handleVoiceInstruction = () => {
     if (
+      !preferences.voicePromptsEnabled ||
       !("speechSynthesis" in window)
     ) {
       return;
@@ -1456,7 +1989,8 @@ export function SessionView({ exercise }: SessionViewProps) {
 
     utterance.rate = 0.9;
     utterance.pitch = 1;
-    utterance.volume = 1;
+    utterance.volume =
+      preferences.voiceVolume;
 
     utterance.onstart = () =>
       setIsSpeaking(true);
@@ -1496,6 +2030,27 @@ export function SessionView({ exercise }: SessionViewProps) {
     attemptStartedAtRef.current =
       Date.now();
 
+    repCountingEnabledRef.current = false;
+    halfwayPlayedRef.current = false;
+    holdCompleteArmedRef.current = true;
+    trackingLossEventActiveRef.current = false;
+    sessionCompletePlayedRef.current = false;
+    countdownStartedRef.current = false;
+
+    if (trackingLossTimerRef.current) {
+      window.clearTimeout(
+        trackingLossTimerRef.current
+      );
+      trackingLossTimerRef.current = null;
+    }
+
+    if (readyDelayTimerRef.current) {
+      window.clearTimeout(
+        readyDelayTimerRef.current
+      );
+      readyDelayTimerRef.current = null;
+    }
+
     latestHandsRef.current = [];
 
     sessionIdRef.current = null;
@@ -1509,6 +2064,7 @@ export function SessionView({ exercise }: SessionViewProps) {
       Promise.resolve();
 
     speedTrackerRef.current?.reset();
+    attemptMetricTrackerRef.current?.reset();
 
     attemptActiveHandTrackerRef.current?.reset();
     attemptSupportHandTrackerRef.current?.reset();
@@ -1539,9 +2095,30 @@ export function SessionView({ exercise }: SessionViewProps) {
     setAngle(0);
     setHoldProgress(0);
     setElapsedSeconds(0);
+    setIsCameraReady(false);
+    setIsTrackingReady(false);
+    setHasStartInteraction(false);
+    setShowCountdown(false);
+    setHasSessionStarted(false);
+    setIsRepCountingEnabled(false);
     setIsPaused(false);
     setShowEndModal(false);
     setShowEndConfirmModal(false);
+    setShowSupportModal(false);
+    setSupportReason(
+      "GENERAL_DIFFICULTY"
+    );
+
+    setLatestAccuracyScore(null);
+    setLatestMovementScore(null);
+    setLatestSpeedScore(null);
+    setLatestSpeedClassification(
+      "NOT_ASSESSED"
+    );
+
+    consecutiveDifficultyAttemptsRef.current =
+      0;
+    supportShownRef.current = false;
   }, [
     exercise.slug,
     initialRepState,
@@ -1583,6 +2160,7 @@ export function SessionView({ exercise }: SessionViewProps) {
           Date.now();
 
         speedTrackerRef.current?.reset();
+        attemptMetricTrackerRef.current?.reset();
         attemptActiveHandTrackerRef.current?.reset();
         attemptSupportHandTrackerRef.current?.reset();
         attemptBilateralFramesRef.current = 0;
@@ -1614,6 +2192,7 @@ export function SessionView({ exercise }: SessionViewProps) {
 
   useEffect(() => {
     if (
+      !hasSessionStarted ||
       isPaused ||
       showEndModal ||
       showEndConfirmModal ||
@@ -1634,6 +2213,7 @@ export function SessionView({ exercise }: SessionViewProps) {
     return () =>
       window.clearInterval(timer);
   }, [
+    hasSessionStarted,
     isPaused,
     showEndModal,
     showEndConfirmModal,
@@ -1642,6 +2222,7 @@ export function SessionView({ exercise }: SessionViewProps) {
 
   useEffect(() => {
     if (
+      !hasSessionStarted ||
       sessionFinalizedRef.current
     ) {
       return;
@@ -1748,10 +2329,199 @@ export function SessionView({ exercise }: SessionViewProps) {
   }, [
     exercise.slug,
     getDetectedHandDetails,
+    hasSessionStarted,
     getSessionSpeedSummary,
     rule.primaryMetric,
     rule.tracker,
   ]);
+
+  useEffect(() => {
+    if (
+      !hasStartInteraction ||
+      !isCameraReady ||
+      !isTrackingReady ||
+      hasSessionStarted ||
+      showCountdown ||
+      countdownStartedRef.current
+    ) {
+      return;
+    }
+
+    countdownStartedRef.current = true;
+    setShowCountdown(true);
+  }, [
+    hasSessionStarted,
+    hasStartInteraction,
+    isCameraReady,
+    isTrackingReady,
+    showCountdown,
+  ]);
+
+  useEffect(() => {
+    if (
+      !hasSessionStarted ||
+      isPaused ||
+      isTrackingReady
+    ) {
+      if (trackingLossTimerRef.current) {
+        window.clearTimeout(
+          trackingLossTimerRef.current
+        );
+        trackingLossTimerRef.current = null;
+      }
+
+      if (isTrackingReady) {
+        trackingLossEventActiveRef.current =
+          false;
+      }
+
+      return;
+    }
+
+    if (
+      trackingLossEventActiveRef.current ||
+      trackingLossTimerRef.current
+    ) {
+      return;
+    }
+
+    trackingLossTimerRef.current =
+      window.setTimeout(() => {
+        trackingLossTimerRef.current = null;
+
+        if (
+          trackingLossEventActiveRef.current
+        ) {
+          return;
+        }
+
+        trackingLossEventActiveRef.current =
+          true;
+
+        void (async () => {
+          if (
+            preferences.soundEffectsEnabled
+          ) {
+            await audioService.playEffect(
+              "trackingLost"
+            );
+          }
+
+          if (
+            preferences.voicePromptsEnabled
+          ) {
+            await audioService.playVoice(
+              "trackingLost",
+              {
+                priority: 3,
+                interruptLowerPriority: true,
+              }
+            );
+          }
+        })();
+      }, TRACKING_LOST_DELAY_MS);
+
+    return () => {
+      if (trackingLossTimerRef.current) {
+        window.clearTimeout(
+          trackingLossTimerRef.current
+        );
+        trackingLossTimerRef.current = null;
+      }
+    };
+  }, [
+    hasSessionStarted,
+    isPaused,
+    isTrackingReady,
+    preferences.soundEffectsEnabled,
+    preferences.voicePromptsEnabled,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (trackingLossTimerRef.current) {
+        window.clearTimeout(
+          trackingLossTimerRef.current
+        );
+      }
+
+      if (readyDelayTimerRef.current) {
+        window.clearTimeout(
+          readyDelayTimerRef.current
+        );
+      }
+
+      audioService.stopAllAudio();
+
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleStartInteraction =
+    useCallback(async () => {
+      await audioService.unlockAudio();
+      audioService.preloadAudio();
+      setHasStartInteraction(true);
+    }, []);
+
+  const handleAudioPreferencesContinue =
+    useCallback(async () => {
+      savePreferences();
+      await handleStartInteraction();
+    }, [
+      handleStartInteraction,
+      savePreferences,
+    ]);
+
+  const handleContinueWithoutAudio =
+    useCallback(async () => {
+      continueWithoutAudio();
+      await handleStartInteraction();
+    }, [
+      continueWithoutAudio,
+      handleStartInteraction,
+    ]);
+
+  const handleCountdownComplete =
+    useCallback(async () => {
+      setShowCountdown(false);
+      setHasSessionStarted(true);
+
+      if (
+        preferences.backgroundMusicEnabled
+      ) {
+        void fadeInSessionMusic();
+      }
+
+      if (
+        preferences.voicePromptsEnabled
+      ) {
+        await audioService.playVoice(
+          "readyWhenYouAre",
+          {
+            priority: 2,
+            interruptLowerPriority: true,
+          }
+        );
+      }
+
+      readyDelayTimerRef.current =
+        window.setTimeout(() => {
+          repCountingEnabledRef.current =
+            true;
+          setIsRepCountingEnabled(true);
+          attemptStartedAtRef.current =
+            Date.now();
+          speedTrackerRef.current?.reset();
+          attemptMetricTrackerRef.current?.reset();
+        }, READY_PROMPT_SAFE_DELAY_MS);
+    }, [
+      fadeInSessionMusic,
+      preferences.backgroundMusicEnabled,
+      preferences.voicePromptsEnabled,
+    ]);
 
   const formatTime = (
     seconds: number
@@ -1773,6 +2543,24 @@ export function SessionView({ exercise }: SessionViewProps) {
 
   const sessionDuration =
     formatTime(elapsedSeconds);
+
+  const isAudioPreferencesModalOpen =
+    areAudioPreferencesLoaded &&
+    !hasConfiguredAudio &&
+    !hasStartInteraction;
+
+  const shouldShowStartOverlay =
+    areAudioPreferencesLoaded &&
+    hasConfiguredAudio &&
+    !hasStartInteraction;
+
+  const sessionStatusLabel = !hasSessionStarted
+    ? "Preparing"
+    : isPaused
+      ? "Paused"
+      : isRepCountingEnabled
+        ? "Active"
+        : "Ready";
 
   return (
     <>
@@ -1833,9 +2621,7 @@ export function SessionView({ exercise }: SessionViewProps) {
                       : "bg-[#40C057]"
                   }`}
                 >
-                  {isPaused
-                    ? "Paused"
-                    : "Ready"}
+                  {sessionStatusLabel}
                 </div>
               </div>
             </div>
@@ -1856,9 +2642,80 @@ export function SessionView({ exercise }: SessionViewProps) {
                 </div>
               </div>
             )}
-
+ 
           <CameraPlaceholder
             isPaused={isPaused}
+            onCameraReadyChange={
+              setIsCameraReady
+            }
+            onTrackingChange={
+              setIsTrackingReady
+            }
+            overlayContent={
+              <>
+                {shouldShowStartOverlay && (
+                  <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-6 backdrop-blur-[2px]">
+                    <div className="max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl">
+                      <h2 className="text-2xl font-semibold text-[#1E1E1E]">
+                        Ready to begin?
+                      </h2>
+
+                      <p className="mt-3 text-base leading-7 text-[#757575]">
+                        Start when you are in a
+                        comfortable position. The
+                        countdown will begin once the
+                        camera can see you.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleStartInteraction();
+                        }}
+                        className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#592EBD] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#4B24A8] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#592EBD]/30"
+                      >
+                        <Play
+                          className="h-5 w-5"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        />
+                        Start Session
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {hasStartInteraction &&
+                  !hasSessionStarted &&
+                  !showCountdown &&
+                  (!isCameraReady ||
+                    !isTrackingReady) && (
+                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/45 px-6 backdrop-blur-[2px]">
+                      <div className="max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl">
+                        <h2 className="text-2xl font-semibold text-[#1E1E1E]">
+                          Preparing your session
+                        </h2>
+
+                        <p className="mt-3 text-base leading-7 text-[#757575]">
+                          {!isCameraReady
+                            ? "Waiting for camera access..."
+                            : "Move into view so AI-DRA can detect your body or hand."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                <SessionCountdown
+                  isOpen={showCountdown}
+                  onComplete={
+                    handleCountdownComplete
+                  }
+                  audioEnabled={
+                    preferences.soundEffectsEnabled
+                  }
+                />
+              </>
+            }
             onAngleChange={
               handleAngleChange
             }
@@ -1881,6 +2738,29 @@ export function SessionView({ exercise }: SessionViewProps) {
               handleHandsChange
             }
             fullScreenControls={
+              hasSessionStarted ? (
+                <SessionControls
+                  isPaused={isPaused}
+                  isSpeaking={isSpeaking}
+                  onPauseToggle={
+                    handlePauseToggle
+                  }
+                  onWatchDemo={
+                    handleWatchDemo
+                  }
+                  onVoiceInstruction={
+                    handleVoiceInstruction
+                  }
+                  onEndSession={
+                    handleEndSession
+                  }
+                />
+              ) : null
+            }
+          />
+
+          {hasSessionStarted && (
+            <div className="px-[30px] py-6">
               <SessionControls
                 isPaused={isPaused}
                 isSpeaking={isSpeaking}
@@ -1897,31 +2777,49 @@ export function SessionView({ exercise }: SessionViewProps) {
                   handleEndSession
                 }
               />
-            }
-          />
-
-          <div className="px-[30px] py-6">
-            <SessionControls
-              isPaused={isPaused}
-              isSpeaking={isSpeaking}
-              onPauseToggle={
-                handlePauseToggle
-              }
-              onWatchDemo={
-                handleWatchDemo
-              }
-              onVoiceInstruction={
-                handleVoiceInstruction
-              }
-              onEndSession={
-                handleEndSession
-              }
-            />
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-[26px]">
-          <LiveFeedbackCard />
+          <LiveFeedbackCard
+            movementScore={
+              latestMovementScore
+            }
+            accuracyScore={
+              latestAccuracyScore
+            }
+            speedScore={
+              latestSpeedScore
+            }
+            speedClassification={
+              latestSpeedClassification
+            }
+            isTracking={
+              isTrackingReady
+            }
+            feedback={feedback}
+            isProvisional
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              setSupportReason(
+                "GENERAL_DIFFICULTY"
+              );
+              setShowSupportModal(true);
+            }}
+            className="w-full rounded-2xl border border-[#D8D0EF] bg-[#F8F6FD] px-5 py-4 text-left transition hover:border-[#B9AAE8] hover:bg-[#F3EFFC] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#592EBD]/20"
+          >
+            <span className="block text-[16px] font-semibold text-[#592EBD]">
+              Need extra support?
+            </span>
+
+            <span className="mt-1 block text-[13px] leading-[145%] text-[#666666]">
+              View exercise-specific NHS guidance and safe next steps.
+            </span>
+          </button>
 
           <RepProgressCard
             currentRep={repCount}
@@ -1935,6 +2833,22 @@ export function SessionView({ exercise }: SessionViewProps) {
           />
         </div>
       </div>
+
+      <AudioPreferencesModal
+        isOpen={
+          isAudioPreferencesModalOpen
+        }
+        preferences={preferences}
+        onPreferenceChange={
+          updateAudioPreference
+        }
+        onContinue={() => {
+          void handleAudioPreferencesContinue();
+        }}
+        onContinueWithoutAudio={() => {
+          void handleContinueWithoutAudio();
+        }}
+      />
 
       {showEndConfirmModal && (
         <EndSessionModal
@@ -1951,18 +2865,40 @@ export function SessionView({ exercise }: SessionViewProps) {
 
       {showEndModal && (
         <SessionCompleteModal
-          exerciseTitle={
-            exercise.title
-          }
+          exerciseSlug={exercise.slug}
+          exerciseTitle={exercise.title}
           repsCompleted={repCount}
-          totalReps={
-            rule.targetReps
+          totalReps={rule.targetReps}
+          averageAccuracy={
+            latestAccuracyScore
           }
-          averageScore={0}
+          averageMovementScore={
+            latestMovementScore
+          }
+          speedClassification={
+            latestSpeedClassification
+          }
           duration={sessionDuration}
+          difficultyFlag={false}
+          recommendation={null}
+          onRepeatExercise={() => {
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {showSupportModal && (
+        <SupportModal
+          exerciseSlug={exercise.slug}
+          exerciseTitle={exercise.title}
+          reason={supportReason}
           onClose={() =>
-            setShowEndModal(false)
+            setShowSupportModal(false)
           }
+          onTryAgain={() => {
+            setShowSupportModal(false);
+            setShowDemoModal(true);
+          }}
         />
       )}
 
@@ -2080,3 +3016,28 @@ function average(values: number[]): number {
 function roundMetric(value: number): number {
   return Number(value.toFixed(6));
 }
+
+function createEmptyAttemptMetricSummary(): AttemptMetricSummary {
+  const createEmptyRange = () => ({
+    start: null,
+    end: null,
+    minimum: null,
+    maximum: null,
+    sampleCount: 0,
+  });
+
+  return {
+    angle: createEmptyRange(),
+    reachValue: createEmptyRange(),
+    wristHeight: createEmptyRange(),
+    wristX: createEmptyRange(),
+    closureRatio: createEmptyRange(),
+    pinchRatio: createEmptyRange(),
+    holdProgress: 0,
+    sequenceCompleted: false,
+    returnedToStart: false,
+    trackingFrames: 0,
+    trackedFrames: 0,
+  };
+}
+

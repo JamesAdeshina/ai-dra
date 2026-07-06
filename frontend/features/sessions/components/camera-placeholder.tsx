@@ -20,6 +20,9 @@ type CameraPlaceholderProps = {
   onClosureChange?: (closureRatio: number) => void;
   onPinchChange?: (pinchRatio: number) => void;
   onHandsChange?: (hands: TrackedHand[]) => void;
+  onCameraReadyChange?: (isReady: boolean) => void;
+  onTrackingChange?: (isTracking: boolean) => void;
+  overlayContent?: ReactNode;
   fullScreenControls?: ReactNode;
 };
 
@@ -42,6 +45,9 @@ export function CameraPlaceholder({
   onClosureChange,
   onPinchChange,
   onHandsChange,
+  onCameraReadyChange,
+  onTrackingChange,
+  overlayContent,
   fullScreenControls,
 }: CameraPlaceholderProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -60,6 +66,8 @@ export function CameraPlaceholder({
     onClosureChange,
     onPinchChange,
     onHandsChange,
+    onCameraReadyChange,
+    onTrackingChange,
   });
 
   const lastReportedRef = useRef<ReportedValues>({
@@ -81,6 +89,8 @@ export function CameraPlaceholder({
       onClosureChange,
       onPinchChange,
       onHandsChange,
+      onCameraReadyChange,
+      onTrackingChange,
     };
   }, [
     onAngleChange,
@@ -90,12 +100,26 @@ export function CameraPlaceholder({
     onClosureChange,
     onPinchChange,
     onHandsChange,
+    onCameraReadyChange,
+    onTrackingChange,
   ]);
 
   const pose = usePoseTracker(videoRef);
   const hand = useHandTracker(videoRef);
 
   const isTracking = pose.isTracking || hand.isTracking;
+
+  useEffect(() => {
+    callbacksRef.current.onCameraReadyChange?.(
+      hasCamera
+    );
+  }, [hasCamera]);
+
+  useEffect(() => {
+    callbacksRef.current.onTrackingChange?.(
+      isTracking
+    );
+  }, [isTracking]);
 
   useEffect(() => {
     if (isPaused) return;
@@ -327,6 +351,8 @@ export function CameraPlaceholder({
           landmarks={trackedHand.landmarks}
         />
       ))}
+
+      {overlayContent}
 
       {isPaused && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 backdrop-blur-[2px]">

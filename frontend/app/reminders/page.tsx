@@ -1,10 +1,16 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { RemindersView } from "@/features/reminders/components/reminders-view";
+import { getReminderPageData } from "@/features/reminders/services/reminder-service";
 
-export default function RemindersPage() {
+export default async function RemindersPage() {
+  const reminderData =
+    await getReminderPageData();
+
   return (
     <AppLayout>
-      <RemindersView hasData={true} />
+      <RemindersView
+        reminderData={reminderData}
+      />
     </AppLayout>
   );
 }
