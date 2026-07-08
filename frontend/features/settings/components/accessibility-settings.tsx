@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useState,
   useTransition,
 } from "react";
@@ -9,7 +8,6 @@ import {
 import {
   AlertTriangle,
   CheckCircle2,
-  Loader2,
   Volume2,
 } from "lucide-react";
 
@@ -17,32 +15,17 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
 import {
-  getOrCreateAccessibilityPreferences,
   updateAccessibilityPreferences,
 } from "@/features/settings/accessibility/services/accessibility-service";
 
+import {
+  useAccessibility,
+} from "@/features/settings/accessibility/components/accessibility-provider";
+
 import type {
   AccessibilityColorTheme,
-  AccessibilityPreferences,
   UpdateAccessibilityPreferencesInput,
 } from "@/features/settings/accessibility/types/accessibility";
-
-const FALLBACK_PREFERENCES: AccessibilityPreferences = {
-  id: "",
-  survivorId: "",
-  textScale: 100,
-  highContrast: false,
-  reduceMotion: true,
-  voiceGuidanceEnabled: true,
-  soundEffectsEnabled: true,
-  audioVolume: 65,
-  speechRate: 100,
-  largerButtons: true,
-  stepByStepGuidance: true,
-  colorTheme: "SYSTEM",
-  createdAt: "",
-  updatedAt: "",
-};
 
 const THEME_OPTIONS: {
   value: AccessibilityColorTheme;
@@ -63,13 +46,11 @@ const THEME_OPTIONS: {
 ];
 
 export function AccessibilitySettings() {
-  const [preferences, setPreferences] =
-    useState<AccessibilityPreferences>(
-      FALLBACK_PREFERENCES
-    );
-
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const {
+    preferences,
+    isReady,
+    setPreferences,
+  } = useAccessibility();
 
   const [savedMessage, setSavedMessage] =
     useState<string | null>(null);
@@ -80,123 +61,61 @@ export function AccessibilitySettings() {
   const [isPending, startTransition] =
     useTransition();
 
-  useEffect(() => {
-    let active = true;
-
-    void getOrCreateAccessibilityPreferences()
-      .then((loadedPreferences) => {
-        if (!active) {
-          return;
-        }
-
-        setPreferences(
-          loadedPreferences
-        );
-      })
-      .catch((error: unknown) => {
-        if (!active) {
-          return;
-        }
-
-        setErrorMessage(
-          getErrorMessage(error)
-        );
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    applyAccessibilityPreferences(
-      preferences
-    );
-  }, [preferences]);
-
-  useEffect(() => {
-    if (
-      preferences.colorTheme !==
-      "SYSTEM"
-    ) {
-      return;
-    }
-
-    const mediaQuery =
-      window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      );
-
-    const handleChange = () => {
-      applyColorTheme(
-        "SYSTEM"
-      );
-    };
-
-    mediaQuery.addEventListener(
-      "change",
-      handleChange
-    );
-
-    return () => {
-      mediaQuery.removeEventListener(
-        "change",
-        handleChange
-      );
-    };
-  }, [preferences.colorTheme]);
-
   const savePreference = (
     input: UpdateAccessibilityPreferencesInput
   ) => {
     setErrorMessage(null);
     setSavedMessage(null);
 
-    const previous = preferences;
+    const previousPreferences =
+      preferences;
 
-    setPreferences((current) => ({
-      ...current,
+    const optimisticPreferences = {
+      ...preferences,
       ...input,
-    }));
+    };
+
+    setPreferences(
+      optimisticPreferences
+    );
 
     startTransition(() => {
       void updateAccessibilityPreferences(
         input
       )
-        .then((updated) => {
-          setPreferences(updated);
+        .then((updatedPreferences) => {
+          setPreferences(
+            updatedPreferences
+          );
+
           setSavedMessage(
             "Accessibility settings saved."
           );
 
           window.setTimeout(() => {
             setSavedMessage(null);
-          }, 2500);
+          }, 2200);
         })
         .catch((error: unknown) => {
-          setPreferences(previous);
+          setPreferences(
+            previousPreferences
+          );
+
           setErrorMessage(
-            getErrorMessage(error)
+            error instanceof Error
+              ? error.message
+              : "Accessibility settings could not be saved."
           );
         });
     });
   };
 
-  if (isLoading) {
+  if (!isReady) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center rounded-2xl bg-white">
-        <div className="flex items-center gap-3 text-[#592EBD]">
-          <Loader2 className="h-5 w-5 animate-spin" />
-
-          <span className="text-[15px] font-medium">
-            Loading accessibility settings...
-          </span>
-        </div>
+      <div className="rounded-2xl bg-white p-8">
+        <p className="text-[15px] font-medium text-[#592EBD]">
+          Loading accessibility settings...
+        </p>
       </div>
     );
   }
@@ -241,11 +160,11 @@ export function AccessibilitySettings() {
             </div>
 
             <p className="text-[#757575]">
-              Accessibility settings are applied automatically across the app where supported.
+              Accessibility settings are applied automatically across the app.
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-6 sm:p-8">
+          <section className="rounded-2xl bg-white p-6 sm:p-8">
             <h2 className="text-[28px] font-semibold">
               Text & Display
             </h2>
@@ -259,7 +178,7 @@ export function AccessibilitySettings() {
                     </h3>
 
                     <p className="mt-1 text-sm text-[#757575]">
-                      Increase or reduce text across supported parts of the app.
+                      Increase or reduce text across the app.
                     </p>
                   </div>
 
@@ -273,34 +192,31 @@ export function AccessibilitySettings() {
                     A
                   </span>
 
-                  <div className="flex-1">
-                    <Slider
-                      value={[
-                        preferences.textScale,
-                      ]}
-                      min={85}
-                      max={140}
-                      step={5}
-                      disabled={isPending}
-                      onValueChange={([
-                        value,
-                      ]) =>
-                        setPreferences(
-                          (current) => ({
-                            ...current,
-                            textScale: value,
-                          })
-                        )
-                      }
-                      onValueCommit={([
-                        value,
-                      ]) =>
-                        savePreference({
-                          textScale: value,
-                        })
-                      }
-                    />
-                  </div>
+                  <Slider
+                    value={[
+                      preferences.textScale,
+                    ]}
+                    min={85}
+                    max={140}
+                    step={5}
+                    disabled={isPending}
+                    onValueChange={([
+                      value,
+                    ]) =>
+                      setPreferences({
+                        ...preferences,
+                        textScale: value,
+                      })
+                    }
+                    onValueCommit={([
+                      value,
+                    ]) =>
+                      savePreference({
+                        textScale: value,
+                      })
+                    }
+                    className="flex-1"
+                  />
 
                   <span className="text-[30px]">
                     A
@@ -323,8 +239,8 @@ export function AccessibilitySettings() {
               />
 
               <SettingRow
-                title="Reduce Text Animations"
-                description="Minimize screen movement and visual distractions."
+                title="Reduce Motion"
+                description="Minimize animations and visual movement."
                 checked={
                   preferences.reduceMotion
                 }
@@ -336,9 +252,9 @@ export function AccessibilitySettings() {
                 }
               />
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-2xl bg-white p-6 sm:p-8">
+          <section className="rounded-2xl bg-white p-6 sm:p-8">
             <h2 className="text-[28px] font-semibold">
               Audio & Voice
             </h2>
@@ -362,7 +278,7 @@ export function AccessibilitySettings() {
 
               <SettingRow
                 title="Sound Effects"
-                description="Play sounds for prompts, reminders, and progress updates."
+                description="Play sounds for prompts and progress updates."
                 checked={
                   preferences.soundEffectsEnabled
                 }
@@ -376,7 +292,7 @@ export function AccessibilitySettings() {
               />
 
               <div className="border-t pt-6">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
                     <h3 className="font-medium">
                       Audio Volume
@@ -395,34 +311,31 @@ export function AccessibilitySettings() {
                 <div className="flex items-center gap-4">
                   <Volume2 size={18} />
 
-                  <div className="flex-1">
-                    <Slider
-                      value={[
-                        preferences.audioVolume,
-                      ]}
-                      min={0}
-                      max={100}
-                      step={5}
-                      disabled={isPending}
-                      onValueChange={([
-                        value,
-                      ]) =>
-                        setPreferences(
-                          (current) => ({
-                            ...current,
-                            audioVolume: value,
-                          })
-                        )
-                      }
-                      onValueCommit={([
-                        value,
-                      ]) =>
-                        savePreference({
-                          audioVolume: value,
-                        })
-                      }
-                    />
-                  </div>
+                  <Slider
+                    value={[
+                      preferences.audioVolume,
+                    ]}
+                    min={0}
+                    max={100}
+                    step={5}
+                    disabled={isPending}
+                    onValueChange={([
+                      value,
+                    ]) =>
+                      setPreferences({
+                        ...preferences,
+                        audioVolume: value,
+                      })
+                    }
+                    onValueCommit={([
+                      value,
+                    ]) =>
+                      savePreference({
+                        audioVolume: value,
+                      })
+                    }
+                    className="flex-1"
+                  />
                 </div>
               </div>
 
@@ -434,58 +347,42 @@ export function AccessibilitySettings() {
                     </h3>
 
                     <p className="mt-1 text-sm text-[#757575]">
-                      Adjust the speed of spoken guidance.
+                      Adjust spoken guidance speed.
                     </p>
                   </div>
 
                   <span className="rounded-full bg-[#F2EEFC] px-3 py-1.5 text-[13px] font-semibold text-[#592EBD]">
-                    {formatSpeechRate(
-                      preferences.speechRate
-                    )}
+                    {preferences.speechRate}%
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <span className="text-[13px] text-[#777777]">
-                    Slow
-                  </span>
-
-                  <div className="flex-1">
-                    <Slider
-                      value={[
-                        preferences.speechRate,
-                      ]}
-                      min={75}
-                      max={150}
-                      step={5}
-                      disabled={isPending}
-                      onValueChange={([
-                        value,
-                      ]) =>
-                        setPreferences(
-                          (current) => ({
-                            ...current,
-                            speechRate: value,
-                          })
-                        )
-                      }
-                      onValueCommit={([
-                        value,
-                      ]) =>
-                        savePreference({
-                          speechRate: value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <span className="text-[13px] text-[#777777]">
-                    Fast
-                  </span>
-                </div>
+                <Slider
+                  value={[
+                    preferences.speechRate,
+                  ]}
+                  min={75}
+                  max={150}
+                  step={5}
+                  disabled={isPending}
+                  onValueChange={([
+                    value,
+                  ]) =>
+                    setPreferences({
+                      ...preferences,
+                      speechRate: value,
+                    })
+                  }
+                  onValueCommit={([
+                    value,
+                  ]) =>
+                    savePreference({
+                      speechRate: value,
+                    })
+                  }
+                />
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
         <aside className="h-fit rounded-2xl bg-white p-6">
@@ -529,14 +426,10 @@ export function AccessibilitySettings() {
                 Color Theme
               </h3>
 
-              <p className="mt-1 text-sm text-[#757575]">
-                Choose a light, dark, or system-matched theme.
-              </p>
-
               <div className="mt-4 grid grid-cols-3 gap-2">
                 {THEME_OPTIONS.map(
                   (option) => {
-                    const selected =
+                    const isSelected =
                       preferences.colorTheme ===
                       option.value;
 
@@ -553,9 +446,9 @@ export function AccessibilitySettings() {
                         }
                         className={[
                           "h-11 rounded-xl text-[14px] font-medium transition",
-                          selected
+                          isSelected
                             ? "bg-[#592EBD] text-white"
-                            : "bg-[#F5F5F5] text-[#424242] hover:bg-[#ECECEC]",
+                            : "bg-[#F5F5F5] text-[#424242]",
                         ].join(" ")}
                       >
                         {option.label}
@@ -584,7 +477,9 @@ function SettingRow({
   description: string;
   checked: boolean;
   disabled: boolean;
-  onChange: (checked: boolean) => void;
+  onChange: (
+    checked: boolean
+  ) => void;
   noBorder?: boolean;
 }) {
   return (
@@ -613,84 +508,4 @@ function SettingRow({
       />
     </div>
   );
-}
-
-function applyAccessibilityPreferences(
-  preferences: AccessibilityPreferences
-): void {
-  document.documentElement.style.setProperty(
-    "--ai-dra-text-scale",
-    String(preferences.textScale / 100)
-  );
-
-  document.documentElement.dataset.highContrast =
-    preferences.highContrast
-      ? "true"
-      : "false";
-
-  document.documentElement.dataset.reduceMotion =
-    preferences.reduceMotion
-      ? "true"
-      : "false";
-
-  document.documentElement.dataset.largeButtons =
-    preferences.largerButtons
-      ? "true"
-      : "false";
-
-  document.documentElement.dataset.stepGuidance =
-    preferences.stepByStepGuidance
-      ? "true"
-      : "false";
-
-  applyColorTheme(
-    preferences.colorTheme
-  );
-}
-
-function applyColorTheme(
-  theme: AccessibilityColorTheme
-): void {
-  const shouldUseDark =
-    theme === "DARK" ||
-    (theme === "SYSTEM" &&
-      window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches);
-
-  document.documentElement.classList.toggle(
-    "dark",
-    shouldUseDark
-  );
-
-  document.documentElement.dataset.colorTheme =
-    theme.toLowerCase();
-}
-
-function formatSpeechRate(
-  value: number
-): string {
-  if (value < 90) {
-    return "Slow";
-  }
-
-  if (value <= 110) {
-    return "Normal";
-  }
-
-  if (value <= 130) {
-    return "Fast";
-  }
-
-  return "Very Fast";
-}
-
-function getErrorMessage(
-  error: unknown
-): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Accessibility settings could not be loaded.";
 }

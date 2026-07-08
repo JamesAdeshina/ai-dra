@@ -1,0 +1,161 @@
+/* AI-DRA global accessibility behaviour */
+
+:root {
+  --ai-dra-text-scale: 1;
+  --ai-dra-audio-volume: 0.65;
+  --ai-dra-speech-rate: 1;
+  --ai-dra-page-background: #f7f4f2;
+  --ai-dra-surface: #ffffff;
+  --ai-dra-surface-muted: #f5f5f5;
+  --ai-dra-text-primary: #1e1e1e;
+  --ai-dra-text-secondary: #666666;
+  --ai-dra-border: #e7e7e7;
+}
+
+html {
+  color-scheme: light;
+  font-size: calc(16px * var(--ai-dra-text-scale));
+}
+
+html.dark {
+  color-scheme: dark;
+  --ai-dra-page-background: #111214;
+  --ai-dra-surface: #1c1e22;
+  --ai-dra-surface-muted: #24272c;
+  --ai-dra-text-primary: #f7f7f8;
+  --ai-dra-text-secondary: #c2c4ca;
+  --ai-dra-border: #34373d;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--ai-dra-page-background);
+  color: var(--ai-dra-text-primary);
+}
+
+body {
+  zoom: 1;
+}
+
+html.dark [class~="bg-white"] {
+  background-color: var(--ai-dra-surface) !important;
+}
+
+html.dark [class~="bg-[#F5F5F5]"],
+html.dark [class~="bg-[#F7F4F2]"],
+html.dark [class~="bg-[#FAFAFA]"] {
+  background-color: var(--ai-dra-surface-muted) !important;
+}
+
+html.dark [class~="text-[#1E1E1E]"],
+html.dark [class~="text-[#424242]"],
+html.dark [class~="text-black"] {
+  color: var(--ai-dra-text-primary) !important;
+}
+
+html.dark [class~="text-[#666666]"],
+html.dark [class~="text-[#757575]"],
+html.dark [class~="text-[#777777]"],
+html.dark [class~="text-[#888888]"],
+html.dark [class~="text-[#999999]"] {
+  color: var(--ai-dra-text-secondary) !important;
+}
+
+html.dark [class~="border-[#E7E7E7]"],
+html.dark [class~="border-[#DADADA]"],
+html.dark [class~="border-[#D8D8D8]"],
+html.dark [class~="border-[#EEEEEE]"] {
+  border-color: var(--ai-dra-border) !important;
+}
+
+html[data-high-contrast="true"] {
+  --ai-dra-text-primary: #000000;
+  --ai-dra-text-secondary: #111111;
+  --ai-dra-border: #000000;
+}
+
+html.dark[data-high-contrast="true"] {
+  --ai-dra-text-primary: #ffffff;
+  --ai-dra-text-secondary: #ffffff;
+  --ai-dra-border: #ffffff;
+}
+
+html[data-high-contrast="true"] button,
+html[data-high-contrast="true"] a,
+html[data-high-contrast="true"] input,
+html[data-high-contrast="true"] select,
+html[data-high-contrast="true"] textarea {
+  outline-color: currentColor;
+}
+
+html[data-reduce-motion="true"] {
+  scroll-behavior: auto;
+}
+
+html[data-reduce-motion="true"] [data-motion="decorative"],
+html[data-reduce-motion="true"] [data-motion="continuous"],
+html[data-reduce-motion="true"] .animate-spin,
+html[data-reduce-motion="true"] .animate-pulse,
+html[data-reduce-motion="true"] .animate-bounce,
+html[data-reduce-motion="true"] .animate-ping {
+  animation: none !important;
+}
+
+html[data-reduce-motion="true"] [data-motion="page"],
+html[data-reduce-motion="true"] [data-motion="modal"],
+html[data-reduce-motion="true"] [data-motion="drawer"] {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+  transform: none !important;
+}
+
+html[data-reduce-motion="true"] button,
+html[data-reduce-motion="true"] a,
+html[data-reduce-motion="true"] [role="switch"],
+html[data-reduce-motion="true"] [data-slot="slider-thumb"],
+html[data-reduce-motion="true"] [data-slot="slider-track"] {
+  transition-duration: 150ms !important;
+}
+
+html[data-large-buttons="true"]
+  button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]):not([data-slot="switch"]):not([data-slot="slider-thumb"]):not([data-icon-button="true"]),
+html[data-large-buttons="true"] a[data-large-target="true"],
+html[data-large-buttons="true"] [role="button"][data-large-target="true"] {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+html[data-large-buttons="true"]
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html[data-large-buttons="true"] select,
+html[data-large-buttons="true"] textarea {
+  min-height: 48px;
+}
+
+html[data-large-buttons="true"] [role="switch"],
+html[data-large-buttons="true"] [data-slot="switch"],
+html[data-large-buttons="true"] [data-slot="slider-thumb"],
+html[data-large-buttons="true"] input[type="checkbox"],
+html[data-large-buttons="true"] input[type="radio"],
+html[data-large-buttons="true"] input[type="range"] {
+  min-height: unset !important;
+  min-width: unset !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #24272c;
+  color: var(--ai-dra-text-primary);
+  border-color: var(--ai-dra-border);
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #8f939b;
+}
+
+html.dark :disabled {
+  opacity: 0.68;
+}

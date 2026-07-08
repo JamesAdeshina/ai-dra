@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+
 import "./globals.css";
+import "./accessibility.css";
+
+import {
+  AccessibilityBootstrapScript,
+} from "@/features/settings/accessibility/components/accessibility-bootstrap-script";
+
+import {
+  AccessibilityProvider,
+} from "@/features/settings/accessibility/components/accessibility-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,9 +28,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className={`${inter.className} min-h-full flex flex-col`}>
-        {children}
+    <html
+      lang="en"
+      className="h-full antialiased"
+      suppressHydrationWarning
+    >
+      <head>
+        <AccessibilityBootstrapScript />
+      </head>
+
+      <body
+        className={`${inter.className} min-h-full flex flex-col`}
+      >
+        <AccessibilityProvider>
+          {children}
+        </AccessibilityProvider>
       </body>
     </html>
   );
