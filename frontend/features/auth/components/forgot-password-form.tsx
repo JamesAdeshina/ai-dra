@@ -11,6 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
+function getAppOrigin() {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, "");
+  }
+
+  return window.location.origin;
+}
+
 type ForgotPasswordFormProps = {
   loginHref?: string;
   registerHref?: string | null;
@@ -60,7 +71,7 @@ export function ForgotPasswordForm({
         createClient();
 
       const redirectTo =
-        `${window.location.origin}/auth/callback?next=/auth/reset-password`;
+        `${getAppOrigin()}/auth/callback?next=/auth/reset-password`;
 
       const { error } =
         await supabase.auth.resetPasswordForEmail(

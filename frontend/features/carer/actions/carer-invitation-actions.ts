@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -93,7 +94,7 @@ export async function createCarerInvitationAction(
     };
   }
 
-  const inviteUrl = buildInvitationUrl(
+  const inviteUrl = await buildInvitationUrl(
     invitation.invitation_token,
   );
 
@@ -224,7 +225,7 @@ export async function resendCarerInvitationAction(
     };
   }
 
-  const inviteUrl = buildInvitationUrl(
+  const inviteUrl = await buildInvitationUrl(
     invitation.token,
   );
 
@@ -356,12 +357,34 @@ export async function cancelCarerInvitationAction(
   };
 }
 
-function buildInvitationUrl(token: string) {
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "http://localhost:3000";
+async function getSiteUrl() {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
 
-  return `${siteUrl.replace(/\/$/, "")}/invitations/carer/accept?token=${encodeURIComponent(
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, "");
+  }
+
+  const headerStore = await headers();
+  const host =
+    headerStore.get("x-forwarded-host") ??
+    headerStore.get("host");
+
+  const protocol =
+    headerStore.get("x-forwarded-proto") ??
+    "https";
+
+  if (host) {
+    return `${protocol}://${host}`;
+  }
+
+  return "http://localhost:3000";
+}
+
+async function buildInvitationUrl(token: string) {
+  const siteUrl = await getSiteUrl();
+
+  return `${siteUrl}/invitations/carer/accept?token=${encodeURIComponent(
     token,
   )}`;
 }

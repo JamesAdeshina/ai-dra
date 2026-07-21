@@ -11,6 +11,17 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 
+function getAppOrigin() {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, "");
+  }
+
+  return window.location.origin;
+}
+
 type CheckEmailCardProps = {
   email: string;
   loginHref?: string;
@@ -57,7 +68,7 @@ export function CheckEmailCard({
         email,
         options: {
           emailRedirectTo:
-            `${window.location.origin}${loginHref}`,
+            `${getAppOrigin()}${loginHref}`,
         },
       });
 

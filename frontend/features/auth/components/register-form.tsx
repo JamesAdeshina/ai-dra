@@ -8,6 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
+function getAppOrigin() {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, "");
+  }
+
+  return window.location.origin;
+}
+
 type RegistrationRole =
   | "SURVIVOR"
   | "CARER";
@@ -112,7 +123,7 @@ export function RegisterForm({
             role: accountRole,
           },
           emailRedirectTo:
-            `${window.location.origin}${loginHref}`,
+            `${getAppOrigin()}${loginHref}`,
         },
       });
 

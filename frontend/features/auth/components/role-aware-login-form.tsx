@@ -153,10 +153,10 @@ export function RoleAwareLoginForm({
         return;
       }
 
-      router.replace(
-        resolution.destination
-      );
       router.refresh();
+
+      window.location.href =
+        resolution.destination;
     } catch (error) {
       console.error(
         "Role-aware login failed:",
