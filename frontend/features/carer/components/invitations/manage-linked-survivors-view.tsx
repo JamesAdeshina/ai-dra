@@ -163,14 +163,24 @@ function LinkedSurvivorCard({
   );
 }
 
-export function ManageLinkedSurvivorsView() {
+type ManageLinkedSurvivorsViewProps = {
+  initialSurvivors?: LinkedSurvivorRecord[];
+};
+
+export function ManageLinkedSurvivorsView({
+  initialSurvivors = initialLinkedSurvivors,
+}: ManageLinkedSurvivorsViewProps) {
   const [survivors, setSurvivors] = useState(
-    initialLinkedSurvivors,
+    initialSurvivors,
   );
 
   const [message, setMessage] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    setSurvivors(initialSurvivors);
+  }, [initialSurvivors]);
 
   useEffect(() => {
     if (!message) {

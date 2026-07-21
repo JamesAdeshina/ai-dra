@@ -28,6 +28,12 @@ export function UpcomingRemindersCard({
       </div>
 
       <div className="divide-y divide-[#F0ECE8] px-4">
+        {reminders.length === 0 ? (
+          <p className="py-6 text-sm text-[#817A75]">
+            No upcoming reminders yet.
+          </p>
+        ) : null}
+
         {reminders.map((reminder) => (
           <article key={reminder.id} className="flex gap-3 py-4">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F5F2FA] text-[11px] font-bold text-[#592EBD]">

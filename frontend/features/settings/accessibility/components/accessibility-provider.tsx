@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 
+import { createClient } from "@/lib/supabase/client";
+
 import {
   applyAccessibilityPreferences,
   DEFAULT_ACCESSIBILITY_PREFERENCES,
@@ -53,44 +55,116 @@ export function AccessibilityProvider({
     useState(false);
 
   useEffect(() => {
-    const stored =
-      readStoredAccessibilityPreferences();
-
-    setPreferencesState(stored);
-    applyAccessibilityPreferences(
-      stored
-    );
+    const supabase = createClient();
 
     let active = true;
 
-    void getOrCreateAccessibilityPreferences()
-      .then((databasePreferences) => {
-        if (!active) {
-          return;
-        }
+    const storedPreferences =
+      readStoredAccessibilityPreferences();
 
-        setPreferencesState(
-          databasePreferences
-        );
+    setPreferencesState(
+      storedPreferences
+    );
 
-        persistAccessibilityPreferences(
-          databasePreferences
-        );
-      })
-      .catch((error: unknown) => {
-        console.error(
-          "Failed to initialise accessibility preferences:",
-          error
-        );
-      })
-      .finally(() => {
-        if (active) {
-          setIsReady(true);
+    applyAccessibilityPreferences(
+      storedPreferences
+    );
+
+    const loadDatabasePreferences =
+      async () => {
+        try {
+          const {
+            data: { user },
+            error: userError,
+          } =
+            await supabase.auth.getUser();
+
+          if (!active) {
+            return;
+          }
+
+          /*
+           * Login, registration and public pages do not have
+           * an authenticated user. Keep local preferences and
+           * do not call the protected database service.
+           */
+          if (userError || !user) {
+            setIsReady(true);
+            return;
+          }
+
+          const databasePreferences =
+            await getOrCreateAccessibilityPreferences();
+
+          if (!active) {
+            return;
+          }
+
+          setPreferencesState(
+            databasePreferences
+          );
+
+          persistAccessibilityPreferences(
+            databasePreferences
+          );
+        } catch (error) {
+          /*
+           * Local preferences have already been applied, so
+           * a database failure should not break public pages
+           * or the rest of the application.
+           */
+          console.warn(
+            "Using locally stored accessibility preferences:",
+            error
+          );
+        } finally {
+          if (active) {
+            setIsReady(true);
+          }
         }
-      });
+      };
+
+    void loadDatabasePreferences();
+
+    /*
+     * Reload database preferences when a user signs in
+     * without requiring a full page refresh.
+     */
+    const {
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        (event) => {
+          if (
+            event === "SIGNED_IN"
+          ) {
+            void loadDatabasePreferences();
+          }
+
+          if (
+            event === "SIGNED_OUT"
+          ) {
+            const localPreferences =
+              readStoredAccessibilityPreferences();
+
+            setPreferencesState(
+              localPreferences
+            );
+
+            applyAccessibilityPreferences(
+              localPreferences
+            );
+
+            setIsReady(true);
+          }
+        }
+      );
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -100,16 +174,17 @@ export function AccessibilityProvider({
         "(prefers-color-scheme: dark)"
       );
 
-    const handleSystemThemeChange = () => {
-      if (
-        preferences.colorTheme ===
-        "SYSTEM"
-      ) {
-        applyAccessibilityPreferences(
-          preferences
-        );
-      }
-    };
+    const handleSystemThemeChange =
+      () => {
+        if (
+          preferences.colorTheme ===
+          "SYSTEM"
+        ) {
+          applyAccessibilityPreferences(
+            preferences
+          );
+        }
+      };
 
     mediaQuery.addEventListener(
       "change",

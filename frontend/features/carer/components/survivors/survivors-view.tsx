@@ -16,11 +16,10 @@ import {
 } from "react";
 
 import {
-  carerSurvivors,
-  pendingSurvivorInviteCount,
   survivorStatusGuide,
 } from "@/features/carer/data/carer-survivors-data";
 import type {
+  CarerSurvivorDirectoryItem,
   DirectorySurvivorStatus,
   SurvivorDirectorySort,
 } from "@/features/carer/types";
@@ -100,21 +99,29 @@ function SummaryStat({
   );
 }
 
-export function SurvivorsView() {
+type SurvivorsViewProps = {
+  survivors: CarerSurvivorDirectoryItem[];
+  pendingInviteCount: number;
+};
+
+export function SurvivorsView({
+  survivors,
+  pendingInviteCount,
+}: SurvivorsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<StatusFilter>("ALL");
   const [sortBy, setSortBy] =
     useState<SurvivorDirectorySort>("RECENTLY_ADDED");
 
-  const activeTodayCount = carerSurvivors.filter(
+  const activeTodayCount = survivors.filter(
     (survivor) => survivor.activeToday,
   ).length;
 
   const filteredSurvivors = useMemo(() => {
     const normalisedSearch = searchTerm.trim().toLowerCase();
 
-    const matchingSurvivors = carerSurvivors.filter(
+    const matchingSurvivors = survivors.filter(
       (survivor) => {
         const matchesStatus =
           statusFilter === "ALL" ||
@@ -203,7 +210,7 @@ export function SurvivorsView() {
               <SummaryStat
                 icon={<UsersRound size={21} />}
                 label="Total Survivors"
-                value={carerSurvivors.length}
+                value={survivors.length}
                 description="Linked to your account"
               />
 
@@ -218,7 +225,7 @@ export function SurvivorsView() {
               <SummaryStat
                 icon={<MailQuestion size={21} />}
                 label="Pending Invite"
-                value={pendingSurvivorInviteCount}
+                value={pendingInviteCount}
                 description="Awaiting acceptance"
                 withDivider
               />

@@ -4,14 +4,24 @@ import {
   useState,
   type FormEvent,
 } from "react";
+
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
-export function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
+type ForgotPasswordFormProps = {
+  loginHref?: string;
+  registerHref?: string | null;
+};
+
+export function ForgotPasswordForm({
+  loginHref = "/auth/login",
+  registerHref = "/auth/register",
+}: ForgotPasswordFormProps) {
+  const [email, setEmail] =
+    useState("");
 
   const [isSubmitting, setIsSubmitting] =
     useState(false);
@@ -27,11 +37,12 @@ export function ForgotPasswordForm() {
   ) => {
     event.preventDefault();
 
-    if (isSubmitting) return;
+    if (isSubmitting) {
+      return;
+    }
 
-    const cleanEmail = email
-      .trim()
-      .toLowerCase();
+    const cleanEmail =
+      email.trim().toLowerCase();
 
     if (!cleanEmail) {
       setErrorMessage(
@@ -45,7 +56,8 @@ export function ForgotPasswordForm() {
     setSuccessMessage(null);
 
     try {
-      const supabase = createClient();
+      const supabase =
+        createClient();
 
       const redirectTo =
         `${window.location.origin}/auth/callback?next=/auth/reset-password`;
@@ -117,7 +129,9 @@ export function ForgotPasswordForm() {
           type="email"
           value={email}
           onChange={(event) => {
-            setEmail(event.target.value);
+            setEmail(
+              event.target.value
+            );
             setErrorMessage(null);
             setSuccessMessage(null);
           }}
@@ -139,22 +153,24 @@ export function ForgotPasswordForm() {
 
       <p className="mt-6 text-center">
         <Link
-          href="/auth/login"
+          href={loginHref}
           className="font-semibold text-blue-600"
         >
           Back to login
         </Link>
       </p>
 
-      <p className="mt-3 text-center text-sm text-[#757575]">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/auth/register"
-          className="font-semibold text-[#592EBD]"
-        >
-          Register
-        </Link>
-      </p>
+      {registerHref ? (
+        <p className="mt-3 text-center text-sm text-[#757575]">
+          Don&apos;t have an account?{" "}
+          <Link
+            href={registerHref}
+            className="font-semibold text-[#592EBD]"
+          >
+            Register
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }

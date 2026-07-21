@@ -1,319 +1,225 @@
-import type { CarerSessionHistoryItem } from "@/features/carer/types/session-history";
+import { createClient } from "@/lib/supabase/server";
 
-const sessionHistoryBySurvivor: Record<
-  string,
-  CarerSessionHistoryItem[]
-> = {
-  "william-carter": [
-    {
-      id: "william-session-12",
-      survivorId: "william-carter",
-      dateLabel: "30 Jun 2026",
-      dateISO: "2026-06-30T18:35:00.000Z",
-      exerciseNames: [
-        "Target Touch",
-        "Grasp and Hold Object",
-      ],
-      score: 83,
-      status: "COMPLETED",
-      durationMinutes: 24,
-    },
-    {
-      id: "william-session-11",
-      survivorId: "william-carter",
-      dateLabel: "28 Jun 2026",
-      dateISO: "2026-06-28T16:20:00.000Z",
-      exerciseNames: [
-        "Lift and Place Object",
-        "Hand Function Task",
-      ],
-      score: 79,
-      status: "PARTIAL",
-      durationMinutes: 26,
-    },
-    {
-      id: "william-session-10",
-      survivorId: "william-carter",
-      dateLabel: "27 Jun 2026",
-      dateISO: "2026-06-27T18:10:00.000Z",
-      exerciseNames: [
-        "Target Touch",
-        "Buttoning and Fastening",
-      ],
-      score: 81,
-      status: "COMPLETED",
-      durationMinutes: 22,
-    },
-    {
-      id: "william-session-9",
-      survivorId: "william-carter",
-      dateLabel: "25 Jun 2026",
-      dateISO: "2026-06-25T17:45:00.000Z",
-      exerciseNames: [
-        "Grasp and Hold Object",
-        "Lift and Place Object",
-      ],
-      score: 76,
-      status: "COMPLETED",
-      durationMinutes: 28,
-    },
-    {
-      id: "william-session-8",
-      survivorId: "william-carter",
-      dateLabel: "23 Jun 2026",
-      dateISO: "2026-06-23T17:30:00.000Z",
-      exerciseNames: ["Hand Function Task"],
-      score: 72,
-      status: "PARTIAL",
-      durationMinutes: 18,
-    },
-    {
-      id: "william-session-7",
-      survivorId: "william-carter",
-      dateLabel: "20 Jun 2026",
-      dateISO: "2026-06-20T18:00:00.000Z",
-      exerciseNames: [
-        "Target Touch",
-        "Lift and Place Object",
-      ],
-      score: 80,
-      status: "COMPLETED",
-      durationMinutes: 25,
-    },
-    {
-      id: "william-session-6",
-      survivorId: "william-carter",
-      dateLabel: "18 Jun 2026",
-      dateISO: "2026-06-18T17:25:00.000Z",
-      exerciseNames: [
-        "Buttoning and Fastening",
-        "Hand Function Task",
-      ],
-      score: 74,
-      status: "ENDED_EARLY",
-      durationMinutes: 14,
-    },
-    {
-      id: "william-session-5",
-      survivorId: "william-carter",
-      dateLabel: "16 Jun 2026",
-      dateISO: "2026-06-16T18:15:00.000Z",
-      exerciseNames: ["Grasp and Hold Object"],
-      score: 85,
-      status: "COMPLETED",
-      durationMinutes: 20,
-    },
-    {
-      id: "william-session-4",
-      survivorId: "william-carter",
-      dateLabel: "14 Jun 2026",
-      dateISO: "2026-06-14T16:40:00.000Z",
-      exerciseNames: [
-        "Lift and Place Object",
-        "Target Touch",
-      ],
-      score: 78,
-      status: "COMPLETED",
-      durationMinutes: 24,
-    },
-    {
-      id: "william-session-3",
-      survivorId: "william-carter",
-      dateLabel: "12 Jun 2026",
-      dateISO: "2026-06-12T17:10:00.000Z",
-      exerciseNames: [
-        "Hand Function Task",
-        "Buttoning and Fastening",
-      ],
-      score: 69,
-      status: "PARTIAL",
-      durationMinutes: 19,
-    },
-    {
-      id: "william-session-2",
-      survivorId: "william-carter",
-      dateLabel: "10 Jun 2026",
-      dateISO: "2026-06-10T18:05:00.000Z",
-      exerciseNames: ["Target Touch"],
-      score: 82,
-      status: "COMPLETED",
-      durationMinutes: 17,
-    },
-    {
-      id: "william-session-1",
-      survivorId: "william-carter",
-      dateLabel: "08 Jun 2026",
-      dateISO: "2026-06-08T16:30:00.000Z",
-      exerciseNames: [
-        "Grasp and Hold Object",
-        "Lift and Place Object",
-      ],
-      score: 77,
-      status: "COMPLETED",
-      durationMinutes: 23,
-    },
-  ],
+import type {
+  CarerSessionHistoryItem,
+  RehabilitationSessionStatus,
+} from "@/features/carer/types/session-history";
 
-  "margaret-wilson": [
-    {
-      id: "margaret-session-8",
-      survivorId: "margaret-wilson",
-      dateLabel: "29 Jun 2026",
-      dateISO: "2026-06-29T16:20:00.000Z",
-      exerciseNames: ["Lift and Place Object"],
-      score: 68,
-      status: "PARTIAL",
-      durationMinutes: 21,
-    },
-    {
-      id: "margaret-session-7",
-      survivorId: "margaret-wilson",
-      dateLabel: "27 Jun 2026",
-      dateISO: "2026-06-27T15:50:00.000Z",
-      exerciseNames: [
-        "Grasp and Hold Object",
-        "Hand Function Task",
-      ],
-      score: 66,
-      status: "COMPLETED",
-      durationMinutes: 24,
-    },
-    {
-      id: "margaret-session-6",
-      survivorId: "margaret-wilson",
-      dateLabel: "25 Jun 2026",
-      dateISO: "2026-06-25T16:10:00.000Z",
-      exerciseNames: [
-        "Target Touch",
-        "Lift and Place Object",
-      ],
-      score: 63,
-      status: "ENDED_EARLY",
-      durationMinutes: 13,
-    },
-    {
-      id: "margaret-session-5",
-      survivorId: "margaret-wilson",
-      dateLabel: "23 Jun 2026",
-      dateISO: "2026-06-23T15:45:00.000Z",
-      exerciseNames: ["Hand Function Task"],
-      score: 67,
-      status: "COMPLETED",
-      durationMinutes: 19,
-    },
-    {
-      id: "margaret-session-4",
-      survivorId: "margaret-wilson",
-      dateLabel: "20 Jun 2026",
-      dateISO: "2026-06-20T16:00:00.000Z",
-      exerciseNames: [
-        "Buttoning and Fastening",
-        "Grasp and Hold Object",
-      ],
-      score: 61,
-      status: "PARTIAL",
-      durationMinutes: 20,
-    },
-    {
-      id: "margaret-session-3",
-      survivorId: "margaret-wilson",
-      dateLabel: "18 Jun 2026",
-      dateISO: "2026-06-18T15:35:00.000Z",
-      exerciseNames: ["Target Touch"],
-      score: 65,
-      status: "COMPLETED",
-      durationMinutes: 18,
-    },
-    {
-      id: "margaret-session-2",
-      survivorId: "margaret-wilson",
-      dateLabel: "15 Jun 2026",
-      dateISO: "2026-06-15T16:30:00.000Z",
-      exerciseNames: [
-        "Lift and Place Object",
-        "Hand Function Task",
-      ],
-      score: 60,
-      status: "PARTIAL",
-      durationMinutes: 22,
-    },
-    {
-      id: "margaret-session-1",
-      survivorId: "margaret-wilson",
-      dateLabel: "12 Jun 2026",
-      dateISO: "2026-06-12T15:55:00.000Z",
-      exerciseNames: ["Grasp and Hold Object"],
-      score: 64,
-      status: "COMPLETED",
-      durationMinutes: 17,
-    },
-  ],
-
-  "robert-singh": [
-    {
-      id: "robert-session-5",
-      survivorId: "robert-singh",
-      dateLabel: "25 Jun 2026",
-      dateISO: "2026-06-25T11:10:00.000Z",
-      exerciseNames: ["Hand Function Task"],
-      score: 48,
-      status: "ENDED_EARLY",
-      durationMinutes: 11,
-    },
-    {
-      id: "robert-session-4",
-      survivorId: "robert-singh",
-      dateLabel: "23 Jun 2026",
-      dateISO: "2026-06-23T11:00:00.000Z",
-      exerciseNames: ["Target Touch"],
-      score: null,
-      status: "MISSED",
-      durationMinutes: null,
-    },
-    {
-      id: "robert-session-3",
-      survivorId: "robert-singh",
-      dateLabel: "20 Jun 2026",
-      dateISO: "2026-06-20T10:45:00.000Z",
-      exerciseNames: [
-        "Grasp and Hold Object",
-        "Hand Function Task",
-      ],
-      score: 52,
-      status: "PARTIAL",
-      durationMinutes: 16,
-    },
-    {
-      id: "robert-session-2",
-      survivorId: "robert-singh",
-      dateLabel: "18 Jun 2026",
-      dateISO: "2026-06-18T11:20:00.000Z",
-      exerciseNames: ["Lift and Place Object"],
-      score: null,
-      status: "MISSED",
-      durationMinutes: null,
-    },
-    {
-      id: "robert-session-1",
-      survivorId: "robert-singh",
-      dateLabel: "15 Jun 2026",
-      dateISO: "2026-06-15T10:30:00.000Z",
-      exerciseNames: ["Target Touch"],
-      score: 55,
-      status: "COMPLETED",
-      durationMinutes: 18,
-    },
-  ],
+type SessionRow = {
+  id: string;
+  survivor_id: string;
+  status: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string | null;
+  session_summary: Record<string, unknown> | null;
+  difficulty_flag: boolean | null;
+  difficulty_reason: string | null;
 };
 
-export function getSurvivorSessionsById(
+export async function getSurvivorSessionsById(
   survivorId: string,
-): CarerSessionHistoryItem[] {
-  return sessionHistoryBySurvivor[survivorId] ?? [];
+): Promise<CarerSessionHistoryItem[]> {
+  const supabase = await createClient();
+
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(
+    ninetyDaysAgo.getDate() - 90,
+  );
+
+  const { data, error } = await supabase.rpc(
+    "get_my_linked_survivor_sessions_for_carer",
+    {
+      from_date: ninetyDaysAgo.toISOString(),
+    },
+  );
+
+  if (error) {
+    console.warn(
+      "Unable to load linked survivor sessions:",
+      error,
+    );
+
+    return [];
+  }
+
+  return ((data ?? []) as SessionRow[])
+    .filter(
+      (session) =>
+        session.survivor_id === survivorId,
+    )
+    .map(mapSession)
+    .sort(
+      (first, second) =>
+        new Date(second.dateISO).getTime() -
+        new Date(first.dateISO).getTime(),
+    );
 }
 
-export function getSurvivorSessionCountById(
-  survivorId: string,
-): number {
-  return getSurvivorSessionsById(survivorId).length;
+function mapSession(
+  session: SessionRow,
+): CarerSessionHistoryItem {
+  const sessionDate = getSessionDate(session);
+
+  return {
+    id: session.id,
+    survivorId: session.survivor_id,
+    dateLabel: formatDate(
+      sessionDate.toISOString(),
+    ),
+    dateISO: sessionDate.toISOString(),
+    exerciseNames: [
+      getExerciseName(session),
+    ],
+    score: getSessionScore(session),
+    status: getSessionStatus(session),
+    durationMinutes:
+      getSessionDurationMinutes(session),
+  };
+}
+
+function getSessionStatus(
+  session: SessionRow,
+): RehabilitationSessionStatus {
+  const status =
+    session.status?.toUpperCase();
+
+  if (status === "COMPLETED") {
+    return "COMPLETED";
+  }
+
+  if (status === "ENDED_EARLY") {
+    return "ENDED_EARLY";
+  }
+
+  if (
+    status === "PAUSED" ||
+    status === "ACTIVE" ||
+    status === "IN_PROGRESS" ||
+    status === "PARTIAL"
+  ) {
+    return "PARTIAL";
+  }
+
+  return "MISSED";
+}
+
+function getExerciseName(session: SessionRow) {
+  const summary = session.session_summary ?? {};
+
+  const value =
+    summary.exerciseTitle ??
+    summary.exercise_title ??
+    summary.exerciseName ??
+    summary.exercise_name;
+
+  return typeof value === "string" && value.trim()
+    ? value
+    : "Exercise session";
+}
+
+function getSessionDate(session: SessionRow) {
+  const rawDate =
+    session.ended_at ??
+    session.started_at ??
+    session.created_at;
+
+  const date = rawDate
+    ? new Date(rawDate)
+    : new Date();
+
+  return Number.isNaN(date.getTime())
+    ? new Date()
+    : date;
+}
+
+function getSessionDurationMinutes(
+  session: SessionRow,
+) {
+  const startedAt = session.started_at
+    ? new Date(session.started_at)
+    : null;
+
+  const endedAt = session.ended_at
+    ? new Date(session.ended_at)
+    : null;
+
+  if (
+    startedAt &&
+    endedAt &&
+    !Number.isNaN(startedAt.getTime()) &&
+    !Number.isNaN(endedAt.getTime()) &&
+    endedAt.getTime() > startedAt.getTime()
+  ) {
+    return Math.max(
+      1,
+      Math.round(
+        (endedAt.getTime() -
+          startedAt.getTime()) /
+          60000,
+      ),
+    );
+  }
+
+  const summaryDuration =
+    session.session_summary?.duration_seconds ??
+    session.session_summary?.durationSeconds ??
+    session.session_summary?.duration;
+
+  if (
+    typeof summaryDuration === "number" &&
+    summaryDuration > 0
+  ) {
+    return Math.max(
+      1,
+      Math.round(summaryDuration / 60),
+    );
+  }
+
+  return 1;
+}
+
+function getSessionScore(session: SessionRow) {
+  const summary = session.session_summary ?? {};
+
+  const possibleValues = [
+    summary.averageAccuracy,
+    summary.average_accuracy,
+    summary.accuracy_score,
+    summary.accuracyScore,
+    summary.averageMovementScore,
+    summary.average_movement_score,
+    summary.movement_score,
+    summary.movementScore,
+    summary.score,
+  ];
+
+  const score = possibleValues.find(
+    (value): value is number =>
+      typeof value === "number" &&
+      Number.isFinite(value),
+  );
+
+  if (typeof score !== "number") {
+    return null;
+  }
+
+  return Math.max(
+    0,
+    Math.min(100, Math.round(score)),
+  );
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }

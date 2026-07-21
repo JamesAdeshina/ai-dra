@@ -91,6 +91,17 @@ export function SurvivorOverviewCard({
       </div>
 
       <div>
+        {survivors.length === 0 ? (
+          <div className="border-t border-[#EEEAE6] px-5 py-10 text-center">
+            <p className="font-medium text-[#2C2825]">
+              No linked survivors yet.
+            </p>
+            <p className="mt-1 text-sm text-[#817A75]">
+              Linked survivors will appear here once they accept an invitation.
+            </p>
+          </div>
+        ) : null}
+
         {survivors.map((survivor, index) => {
           const percentage = Math.round(
             (survivor.todayProgressMinutes / survivor.dailyGoalMinutes) * 100

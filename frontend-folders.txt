@@ -1,27 +1,33 @@
 frontend
 |-- app
 |   |-- admin
-|   |   |-- analytics
-|   |   |-- carers
-|   |   |   `-- [carerId]
-|   |   |-- dashboard
-|   |   |-- exercises
-|   |   |   |-- [exerciseId]
-|   |   |   `-- new
-|   |   |-- invitations
-|   |   |-- notifications
-|   |   |-- sessions
-|   |   |   `-- [sessionId]
-|   |   |-- settings
-|   |   |   |-- engagement
-|   |   |   |-- export
+|   |   |-- (portal)
+|   |   |   |-- analytics
+|   |   |   |-- carers
+|   |   |   |   `-- [carerId]
+|   |   |   |-- dashboard
+|   |   |   |-- exercises
+|   |   |   |   |-- [exerciseId]
+|   |   |   |   `-- new
+|   |   |   |-- invitations
 |   |   |   |-- notifications
-|   |   |   |-- privacy
-|   |   |   |-- profile
-|   |   |   |-- security
-|   |   |   `-- system
-|   |   `-- survivors
-|   |       `-- [survivorId]
+|   |   |   |-- sessions
+|   |   |   |   `-- [sessionId]
+|   |   |   |-- settings
+|   |   |   |   |-- engagement
+|   |   |   |   |-- export
+|   |   |   |   |-- notifications
+|   |   |   |   |-- privacy
+|   |   |   |   |-- profile
+|   |   |   |   |-- security
+|   |   |   |   `-- system
+|   |   |   `-- survivors
+|   |   |       `-- [survivorId]
+|   |   `-- auth
+|   |       |-- check-email
+|   |       |-- forgot-password
+|   |       |-- login
+|   |       `-- reset-password
 |   |-- api
 |   |   |-- exercise-repetitions
 |   |   |-- exercise-sessions
@@ -37,29 +43,39 @@ frontend
 |   |   |-- register
 |   |   `-- reset-password
 |   |-- carer
-|   |   |-- dashboard
-|   |   |-- invitations
-|   |   |   |-- manage
-|   |   |   |-- pending
-|   |   |   `-- send
-|   |   |-- notifications
-|   |   |-- settings
-|   |   |   |-- about
-|   |   |   |-- help
+|   |   |-- (portal)
+|   |   |   |-- dashboard
+|   |   |   |-- invitations
+|   |   |   |   |-- manage
+|   |   |   |   |-- pending
+|   |   |   |   `-- send
 |   |   |   |-- notifications
-|   |   |   |-- password
-|   |   |   `-- profile
-|   |   `-- survivors
-|   |       `-- [survivorId]
-|   |           |-- exercises
-|   |           |-- notes
-|   |           `-- sessions
+|   |   |   |-- settings
+|   |   |   |   |-- about
+|   |   |   |   |-- help
+|   |   |   |   |-- notifications
+|   |   |   |   |-- password
+|   |   |   |   `-- profile
+|   |   |   `-- survivors
+|   |   |       `-- [survivorId]
+|   |   |           |-- exercises
+|   |   |           |-- notes
+|   |   |           `-- sessions
+|   |   `-- auth
+|   |       |-- check-email
+|   |       |-- forgot-password
+|   |       |-- login
+|   |       |-- register
+|   |       `-- reset-password
 |   |-- dashboard
 |   |-- exercises
 |   |   `-- [exerciseId]
 |   |       |-- demo
 |   |       `-- start
 |   |-- history
+|   |-- invitations
+|   |   `-- carer
+|   |       `-- accept
 |   |-- onboarding
 |   |-- progress
 |   |-- reminders
@@ -89,9 +105,14 @@ frontend
 |   |   |-- services
 |   |   |-- types
 |   |   `-- utils
+|   |-- audio
 |   |-- auth
-|   |   `-- components
+|   |   |-- components
+|   |   |-- services
+|   |   |-- types
+|   |   `-- utils
 |   |-- carer
+|   |   |-- actions
 |   |   |-- components
 |   |   |   |-- dashboard
 |   |   |   |-- invitations
@@ -100,18 +121,27 @@ frontend
 |   |   |   |-- settings
 |   |   |   `-- survivors
 |   |   |-- data
+|   |   |-- services
 |   |   `-- types
 |   |-- dashboard
 |   |   |-- components
 |   |   |-- data
-|   |   `-- types
+|   |   |-- services
+|   |   |-- types
+|   |   `-- utils
 |   |-- exercises
 |   |   |-- components
 |   |   |   |-- demo
 |   |   |   `-- details
 |   |   |-- data
+|   |   |-- services
 |   |   `-- types
 |   |-- history
+|   |   |-- components
+|   |   |-- services
+|   |   `-- types
+|   |-- invitations
+|   |   |-- actions
 |   |   `-- components
 |   |-- onboarding
 |   |   `-- components
@@ -123,37 +153,52 @@ frontend
 |   |   |-- hooks
 |   |   `-- services
 |   |-- progress
-|   |   `-- components
+|   |   |-- components
+|   |   |-- services
+|   |   `-- types
 |   |-- reminders
-|   |   `-- components
+|   |   |-- components
+|   |   |-- services
+|   |   |-- types
+|   |   `-- utils
 |   |-- sessions
 |   |   |-- components
+|   |   |-- scoring
 |   |   `-- services
-|   `-- settings
-|       `-- components
+|   |-- settings
+|   |   |-- accessibility
+|   |   |   |-- components
+|   |   |   |-- services
+|   |   |   |-- types
+|   |   |   `-- utils
+|   |   |-- components
+|   |   `-- services
+|   `-- support
 |-- hooks
 |-- lib
 |   `-- supabase
-|-- public
-|   |-- audio
-|   |   |-- effects
-|   |   |-- licences
-|   |   |   |-- adobe-firefly
-|   |   |   `-- pixabay
-|   |   |-- music
-|   |   `-- voice
-|   |-- exercises
-|   |   |-- button-fastening
-|   |   |-- hand-function
-|   |   |-- lift-place
-|   |   |-- reach-grasp
-|   |   `-- target-touch
-|   |-- icons
-|   |-- illustrations
-|   |-- images
-|   `-- video
-|-- services
-|-- styles
-`-- types
+`-- public
+    |-- audio
+    |   |-- effects
+    |   |-- licences
+    |   |   |-- adobe-firefly
+    |   |   `-- pixabay
+    |   |-- music
+    |   `-- voice
+    |-- exercises
+    |   |-- button-fastening
+    |   |   `-- activities
+    |   |-- hand-function
+    |   |   `-- activities
+    |   |-- lift-place
+    |   |   `-- activities
+    |   |-- reach-grasp
+    |   |   `-- activities
+    |   `-- target-touch
+    |       `-- activities
+    |-- icons
+    |-- illustrations
+    |-- images
+    `-- video
 
-156 directories
+201 directories

@@ -3,79 +3,154 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
-export function RegisterForm() {
+type RegistrationRole =
+  | "SURVIVOR"
+  | "CARER";
+
+type RegisterFormProps = {
+  accountRole?: RegistrationRole;
+  loginHref?: string;
+  checkEmailHref?: string;
+  title?: string;
+  description?: string;
+};
+
+export function RegisterForm({
+  accountRole = "SURVIVOR",
+  loginHref = "/auth/login",
+  checkEmailHref = "/auth/check-email",
+  title = "Create Your Account",
+  description = "Let’s get you ready for your rehabilitation journey.",
+}: RegisterFormProps) {
   const router = useRouter();
   const supabase = createClient();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [firstName, setFirstName] =
+    useState("");
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const [lastName, setLastName] =
+    useState("");
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
-    if (isSubmitting) return;
+    if (isSubmitting) {
+      return;
+    }
 
     setErrorMessage("");
     setSuccessMessage("");
 
-    const cleanFirstName = firstName.trim();
-    const cleanLastName = lastName.trim();
-    const cleanEmail = email.trim();
+    const cleanFirstName =
+      firstName.trim();
 
-    if (!cleanFirstName || !cleanLastName) {
-      setErrorMessage("Please enter your first and last name.");
+    const cleanLastName =
+      lastName.trim();
+
+    const cleanEmail =
+      email.trim();
+
+    if (
+      !cleanFirstName ||
+      !cleanLastName
+    ) {
+      setErrorMessage(
+        "Please enter your first and last name."
+      );
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage("Password must be at least 8 characters.");
+      setErrorMessage(
+        "Password must be at least 8 characters."
+      );
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const {
+        data,
+        error,
+      } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
           data: {
-            first_name: cleanFirstName,
-            last_name: cleanLastName,
-            display_name: `${cleanFirstName} ${cleanLastName}`,
-            role: "SURVIVOR",
+            first_name:
+              cleanFirstName,
+            last_name:
+              cleanLastName,
+            display_name:
+              `${cleanFirstName} ${cleanLastName}`,
+            role: accountRole,
           },
-          emailRedirectTo: `${window.location.origin}/auth/login`,
+          emailRedirectTo:
+            `${window.location.origin}${loginHref}`,
         },
       });
 
       if (error) {
-        setErrorMessage(error.message);
+        setErrorMessage(
+          error.message
+        );
         return;
       }
 
       if (data.session) {
-        router.replace("/onboarding");
+        const destination =
+          accountRole === "CARER"
+            ? "/carer/dashboard"
+            : "/onboarding";
+
+        router.replace(
+          destination
+        );
+
         router.refresh();
         return;
       }
 
       router.push(
-        `/auth/check-email?email=${encodeURIComponent(cleanEmail)}`
+        `${checkEmailHref}?email=${encodeURIComponent(
+          cleanEmail
+        )}`
       );
     } catch (error) {
-      console.error("Unexpected registration error:", error);
-      setErrorMessage("Unable to create your account. Please try again.");
+      console.error(
+        "Unexpected registration error:",
+        error
+      );
+
+      setErrorMessage(
+        "Unable to create your account. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -84,17 +159,20 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit}>
       <h1 className="text-[30px] font-bold leading-tight text-[#010E0E]">
-        Create Your Account
+        {title}
       </h1>
 
       <p className="mt-2 text-[16px] text-[#757575]">
-        Let&apos;s get you ready for your rehabilitation journey.
+        {description}
       </p>
 
       <div className="mt-8 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="first-name" className="text-sm">
+            <label
+              htmlFor="first-name"
+              className="text-sm"
+            >
               First name
             </label>
 
@@ -104,14 +182,21 @@ export function RegisterForm() {
               autoComplete="given-name"
               placeholder="Enter your first name"
               value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              onChange={(event) =>
+                setFirstName(
+                  event.target.value
+                )
+              }
               required
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label htmlFor="last-name" className="text-sm">
+            <label
+              htmlFor="last-name"
+              className="text-sm"
+            >
               Last name
             </label>
 
@@ -121,7 +206,11 @@ export function RegisterForm() {
               autoComplete="family-name"
               placeholder="Enter your last name"
               value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              onChange={(event) =>
+                setLastName(
+                  event.target.value
+                )
+              }
               required
               disabled={isSubmitting}
             />
@@ -129,7 +218,10 @@ export function RegisterForm() {
         </div>
 
         <div>
-          <label htmlFor="register-email" className="text-sm">
+          <label
+            htmlFor="register-email"
+            className="text-sm"
+          >
             Email address
           </label>
 
@@ -140,14 +232,21 @@ export function RegisterForm() {
             autoComplete="email"
             placeholder="Enter your email address"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) =>
+              setEmail(
+                event.target.value
+              )
+            }
             required
             disabled={isSubmitting}
           />
         </div>
 
         <div>
-          <label htmlFor="register-password" className="text-sm">
+          <label
+            htmlFor="register-password"
+            className="text-sm"
+          >
             Password
           </label>
 
@@ -155,11 +254,19 @@ export function RegisterForm() {
             <Input
               id="register-password"
               className="h-16 rounded-xl pr-16"
-              type={showPassword ? "text" : "password"}
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
               autoComplete="new-password"
               placeholder="Enter your password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) =>
+                setPassword(
+                  event.target.value
+                )
+              }
               minLength={8}
               required
               disabled={isSubmitting}
@@ -167,11 +274,22 @@ export function RegisterForm() {
 
             <button
               type="button"
-              onClick={() => setShowPassword((current) => !current)}
+              onClick={() =>
+                setShowPassword(
+                  (current) =>
+                    !current
+                )
+              }
               className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-semibold"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={
+                showPassword
+                  ? "Hide password"
+                  : "Show password"
+              }
             >
-              {showPassword ? "Hide" : "Show"}
+              {showPassword
+                ? "Hide"
+                : "Show"}
             </button>
           </div>
         </div>
@@ -194,7 +312,7 @@ export function RegisterForm() {
           <p>{successMessage}</p>
 
           <Link
-            href="/auth/login"
+            href={loginHref}
             className="mt-2 inline-block font-semibold text-blue-600"
           >
             Go to login
@@ -207,13 +325,15 @@ export function RegisterForm() {
         disabled={isSubmitting}
         className="mt-10 h-16 w-full rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8]"
       >
-        {isSubmitting ? "Creating account..." : "Create Account"}
+        {isSubmitting
+          ? "Creating account..."
+          : "Create Account"}
       </Button>
 
       <p className="mt-7 text-center text-[16px]">
         Already have an account?{" "}
         <Link
-          href="/auth/login"
+          href={loginHref}
           className="font-semibold text-blue-600"
         >
           Log in

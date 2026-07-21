@@ -28,6 +28,12 @@ export function RecentActivityCard({
       </div>
 
       <div className="divide-y divide-[#F0ECE8] px-4">
+        {activities.length === 0 ? (
+          <p className="py-6 text-sm text-[#817A75]">
+            No recent activity yet.
+          </p>
+        ) : null}
+
         {activities.map((activity) => (
           <article key={activity.id} className="flex items-center gap-3 py-4">
             {activity.avatarUrl ? (

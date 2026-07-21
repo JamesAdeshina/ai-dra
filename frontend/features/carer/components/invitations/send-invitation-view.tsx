@@ -24,8 +24,8 @@ import {
   getInvitationDraft,
   saveInvitationDraft,
   saveInvitationNotice,
-  savePendingInvitation,
 } from "@/features/carer/data/carer-invitation-storage";
+import { createCarerInvitationAction } from "@/features/carer/actions/carer-invitation-actions";
 import type { CarerInvitationDraft } from "@/features/carer/types/carer-invitation";
 import { cn } from "@/lib/utils";
 
@@ -281,33 +281,45 @@ Haruna`;
     setFeedback("Invitation saved as a draft.");
   }
 
-  function handleSendInvitation() {
+  async function handleSendInvitation() {
     if (!draft || isSending) {
       return;
     }
 
     setIsSending(true);
 
-    window.setTimeout(() => {
-      const pendingInvitation =
-        savePendingInvitation(draft);
+    const result =
+      await createCarerInvitationAction({
+        firstName: draft.firstName,
+        lastName: draft.lastName,
+        email: draft.email,
+        phone: draft.phone,
+        relationship: draft.relationship,
+        customRelationship:
+          draft.customRelationship,
+        message: draft.message,
+      });
 
-      if (!pendingInvitation) {
-        setIsSending(false);
+    setIsSending(false);
 
-        setFeedback(
+    if (!result.ok) {
+      setFeedback(
+        result.error ??
           "The invitation could not be sent. Please try again.",
-        );
-
-        return;
-      }
-
-      saveInvitationNotice(
-        `Invitation sent to ${draft.firstName} ${draft.lastName}.`,
       );
 
-      router.push("/carer/invitations/pending");
-    }, 700);
+      return;
+    }
+
+    saveInvitationNotice(
+      `Invitation sent to ${draft.firstName} ${draft.lastName}.`,
+    );
+
+    router.push(
+      result.invitationId
+        ? `/carer/invitations/pending?invitationId=${result.invitationId}`
+        : "/carer/invitations/pending",
+    );
   }
 
   if (!loaded) {

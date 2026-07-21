@@ -1,23 +1,76 @@
 frontend
-|-- .env.example
-|-- .env.local
-|-- .gitignore
 |-- AGENTS.md
 |-- CLAUDE.md
 |-- README.md
 |-- app
-|   |               `-- api
-|   |   |           `-- exercise-repetitions
-|   |   |           `-- route.ts
+|   |                               `-- accessibility.css
+|   |                               `-- admin
+|   |   |                           `-- (portal)
+|   |   |   |                       `-- analytics
+|   |   |   |                       `-- page.tsx
+|   |   |   |-- carers
+|   |   |   |   |                   `-- [carerId]
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   `-- page.tsx
+|   |   |   |-- dashboard
+|   |   |   |   `-- page.tsx
+|   |   |   |-- exercises
+|   |   |   |   |-- [exerciseId]
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- new
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   `-- page.tsx
+|   |   |   |-- invitations
+|   |   |   |   `-- page.tsx
+|   |   |   |-- layout.tsx
+|   |   |   |-- notifications
+|   |   |   |   `-- page.tsx
+|   |   |   |-- page.tsx
+|   |   |   |-- sessions
+|   |   |   |   |-- [sessionId]
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   `-- page.tsx
+|   |   |   |-- settings
+|   |   |   |   |-- engagement
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- export
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- notifications
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- page.tsx
+|   |   |   |   |-- privacy
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- profile
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- security
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   `-- system
+|   |   |   |                       `-- page.tsx
+|   |   |   `-- survivors
+|   |   |       |-- [survivorId]
+|   |   |       |                   `-- page.tsx
+|   |   |       `-- page.tsx
+|   |   `-- auth
+|   |       |-- check-email
+|   |       |   `-- page.tsx
+|   |       |-- forgot-password
+|   |       |   `-- page.tsx
+|   |       |-- login
+|   |       |   `-- page.tsx
+|   |       `-- reset-password
+|   |           `-- page.tsx
+|   |-- api
+|   |   |-- exercise-repetitions
+|   |   |   `-- route.ts
 |   |   |-- exercise-sessions
-|   |   |   |       `-- [sessionId]
-|   |   |   |       `-- route.ts
+|   |   |   |-- [sessionId]
+|   |   |   |   `-- route.ts
 |   |   |   `-- route.ts
 |   |   |-- onboarding
 |   |   |   `-- route.ts
 |   |   `-- profile
 |   |       |-- avatar
-|   |       |       `-- route.ts
+|   |       |   `-- route.ts
 |   |       `-- route.ts
 |   |-- auth
 |   |   |-- callback
@@ -32,20 +85,76 @@ frontend
 |   |   |   `-- page.tsx
 |   |   `-- reset-password
 |   |       `-- page.tsx
+|   |-- carer
+|   |   |-- (portal)
+|   |   |   |-- dashboard
+|   |   |   |   `-- page.tsx
+|   |   |   |-- invitations
+|   |   |   |   |-- manage
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- page.tsx
+|   |   |   |   |-- pending
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   `-- send
+|   |   |   |                       `-- page.tsx
+|   |   |   |-- layout.tsx
+|   |   |   |-- notifications
+|   |   |   |   `-- page.tsx
+|   |   |   |-- page.tsx
+|   |   |   |-- settings
+|   |   |   |   |-- about
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- help
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- notifications
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   |-- page.tsx
+|   |   |   |   |-- password
+|   |   |   |   |                   `-- page.tsx
+|   |   |   |   `-- profile
+|   |   |   |                       `-- page.tsx
+|   |   |   `-- survivors
+|   |   |       |-- [survivorId]
+|   |   |       |   |               `-- exercises
+|   |   |       |   |               `-- page.tsx
+|   |   |       |   |-- layout.tsx
+|   |   |       |   |-- notes
+|   |   |       |   |               `-- page.tsx
+|   |   |       |   |-- page.tsx
+|   |   |       |   `-- sessions
+|   |   |       |                   `-- page.tsx
+|   |   |       `-- page.tsx
+|   |   `-- auth
+|   |       |-- check-email
+|   |       |   `-- page.tsx
+|   |       |-- forgot-password
+|   |       |   `-- page.tsx
+|   |       |-- login
+|   |       |   `-- page.tsx
+|   |       |-- register
+|   |       |   `-- page.tsx
+|   |       `-- reset-password
+|   |           `-- page.tsx
 |   |-- dashboard
 |   |   `-- page.tsx
 |   |-- exercises
 |   |   |-- [exerciseId]
 |   |   |   |-- demo
-|   |   |   |       `-- page.tsx
+|   |   |   |   `-- page.tsx
 |   |   |   |-- page.tsx
 |   |   |   `-- start
-|   |   |           `-- page.tsx
+|   |   |       `-- page.tsx
+|   |   |-- error.tsx
+|   |   |-- loading.tsx
 |   |   `-- page.tsx
 |   |-- favicon.ico
 |   |-- globals.css
 |   |-- history
 |   |   `-- page.tsx
+|   |-- invitations
+|   |   `-- carer
+|   |       `-- accept
+|   |           `-- page.tsx
 |   |-- layout.tsx
 |   |-- onboarding
 |   |   `-- page.tsx
@@ -86,42 +195,233 @@ frontend
 |-- components.json
 |-- eslint.config.mjs
 |-- features
+|   |-- admin
+|   |   |-- components
+|   |   |   |-- analytics
+|   |   |   |   `-- admin-analytics-view.tsx
+|   |   |   |-- carers
+|   |   |   |   |-- admin-carer-detail-view.tsx
+|   |   |   |   |-- admin-carers-view.tsx
+|   |   |   |   `-- carer-status-badge.tsx
+|   |   |   |-- dashboard
+|   |   |   |   |-- admin-dashboard-view.tsx
+|   |   |   |   |-- attention-required-card.tsx
+|   |   |   |   |-- dashboard-stat-card.tsx
+|   |   |   |   |-- recent-activity-table.tsx
+|   |   |   |   |-- session-status-chart.tsx
+|   |   |   |   `-- session-trend-chart.tsx
+|   |   |   |-- exercises
+|   |   |   |   |-- admin-add-exercise-view.tsx
+|   |   |   |   |-- admin-exercise-detail-view.tsx
+|   |   |   |   |-- admin-exercises-view.tsx
+|   |   |   |   `-- exercise-status-badge.tsx
+|   |   |   |-- invitations
+|   |   |   |   |-- admin-invitations-view.tsx
+|   |   |   |   |-- invitation-detail-panel.tsx
+|   |   |   |   |-- invitation-status-badge.tsx
+|   |   |   |   `-- invitation-summary-card.tsx
+|   |   |   |-- layout
+|   |   |   |   |-- admin-header.tsx
+|   |   |   |   |-- admin-mobile-navigation.tsx
+|   |   |   |   |-- admin-shell.tsx
+|   |   |   |   `-- admin-sidebar.tsx
+|   |   |   |-- notifications
+|   |   |   |   |-- admin-notifications-view.tsx
+|   |   |   |   `-- notification-badges.tsx
+|   |   |   |-- sessions
+|   |   |   |   |-- admin-session-detail-view.tsx
+|   |   |   |   |-- admin-sessions-view.tsx
+|   |   |   |   |-- session-status-badge.tsx
+|   |   |   |   `-- session-summary-card.tsx
+|   |   |   |-- settings
+|   |   |   |   |-- admin-engagement-settings.tsx
+|   |   |   |   |-- admin-export-settings.tsx
+|   |   |   |   |-- admin-notification-settings.tsx
+|   |   |   |   |-- admin-privacy-settings.tsx
+|   |   |   |   |-- admin-profile-settings.tsx
+|   |   |   |   |-- admin-security-settings.tsx
+|   |   |   |   |-- admin-settings-overview.tsx
+|   |   |   |   |-- admin-system-information.tsx
+|   |   |   |   |-- settings-breadcrumb.tsx
+|   |   |   |   |-- settings-card.tsx
+|   |   |   |   |-- settings-page-header.tsx
+|   |   |   |   |-- settings-save-notice.tsx
+|   |   |   |   `-- settings-switch.tsx
+|   |   |   |-- shared
+|   |   |   |   `-- admin-page-placeholder.tsx
+|   |   |   `-- survivors
+|   |   |       |-- admin-survivor-detail-view.tsx
+|   |   |       |-- admin-survivors-view.tsx
+|   |   |       `-- survivor-status-badge.tsx
+|   |   |-- data
+|   |   |   |-- admin-analytics-data.ts
+|   |   |   |-- admin-carer-data.ts
+|   |   |   |-- admin-dashboard-data.ts
+|   |   |   |-- admin-exercise-data.ts
+|   |   |   |-- admin-invitation-data.ts
+|   |   |   |-- admin-navigation.ts
+|   |   |   |-- admin-notification-data.ts
+|   |   |   |-- admin-session-data.ts
+|   |   |   |-- admin-settings-data.ts
+|   |   |   `-- admin-survivor-data.ts
+|   |   |-- hooks
+|   |   |-- services
+|   |   |-- types
+|   |   |   |-- admin-analytics.ts
+|   |   |   |-- admin-carer.ts
+|   |   |   |-- admin-exercise.ts
+|   |   |   |-- admin-invitation.ts
+|   |   |   |-- admin-notification.ts
+|   |   |   |-- admin-session.ts
+|   |   |   |-- admin-settings.ts
+|   |   |   `-- index.ts
+|   |   `-- utils
+|   |-- audio
+|   |   |-- audio-config.ts
+|   |   |-- audio-service.ts
+|   |   |-- audio-types.ts
+|   |   |-- index.ts
+|   |   |-- use-audio-preferences.ts
+|   |   `-- use-background-music.ts
 |   |-- auth
-|   |   `-- components
-|   |       |-- auth-layout.tsx
-|   |       |-- check-email-card.tsx
-|   |       |-- forgot-password-form.tsx
-|   |       |-- login-form.tsx
-|   |       |-- register-form.tsx
-|   |       `-- reset-password-form.tsx
+|   |   |-- components
+|   |   |   |-- auth-layout.tsx
+|   |   |   |-- check-email-card.tsx
+|   |   |   |-- forgot-password-form.tsx
+|   |   |   |-- login-form.tsx
+|   |   |   |-- portal-auth-shell.tsx
+|   |   |   |-- register-form.tsx
+|   |   |   |-- reset-password-form.tsx
+|   |   |   `-- role-aware-login-form.tsx
+|   |   |-- services
+|   |   |   |-- auth-redirect-service.ts
+|   |   |   `-- role-service.ts
+|   |   |-- types
+|   |   |   `-- auth-role.ts
+|   |   `-- utils
+|   |       `-- portal-routes.ts
+|   |-- carer
+|   |   |-- actions
+|   |   |   |-- carer-invitation-accept-actions.ts
+|   |   |   |-- carer-invitation-actions.ts
+|   |   |   |-- carer-notification-actions.ts
+|   |   |   `-- unlink-survivor-action.ts
+|   |   |-- components
+|   |   |   |-- dashboard
+|   |   |   |   |-- carer-dashboard-view.tsx
+|   |   |   |   |-- dashboard-filters.tsx
+|   |   |   |   |-- dashboard-stat-card.tsx
+|   |   |   |   |-- dashboard-summary.tsx
+|   |   |   |   |-- recent-activity-card.tsx
+|   |   |   |   |-- survivor-overview-card.tsx
+|   |   |   |   |-- upcoming-reminders-card.tsx
+|   |   |   |   `-- weekly-progress-card.tsx
+|   |   |   |-- invitations
+|   |   |   |   |-- carer-invitation-view.tsx
+|   |   |   |   |-- manage-linked-survivors-view.tsx
+|   |   |   |   |-- pending-invitation-view.tsx
+|   |   |   |   `-- send-invitation-view.tsx
+|   |   |   |-- layout
+|   |   |   |   |-- carer-header.tsx
+|   |   |   |   |-- carer-mobile-navigation.tsx
+|   |   |   |   |-- carer-page-placeholder.tsx
+|   |   |   |   |-- carer-shell.tsx
+|   |   |   |   `-- carer-sidebar.tsx
+|   |   |   |-- notifications
+|   |   |   |   `-- carer-notifications-view.tsx
+|   |   |   |-- settings
+|   |   |   |   |-- about-carer-portal-view.tsx
+|   |   |   |   |-- carer-settings-view.tsx
+|   |   |   |   |-- change-password-view.tsx
+|   |   |   |   |-- help-support-view.tsx
+|   |   |   |   |-- notification-preferences-view.tsx
+|   |   |   |   |-- profile-settings-view.tsx
+|   |   |   |   `-- settings-ui.tsx
+|   |   |   `-- survivors
+|   |   |       |-- recent-activity-card.tsx
+|   |   |       |-- survivor-card.tsx
+|   |   |       |-- survivor-detail-shell.tsx
+|   |   |       |-- survivor-detail-sidebar.tsx
+|   |   |       |-- survivor-exercises-view.tsx
+|   |   |       |-- survivor-notes-view.tsx
+|   |   |       |-- survivor-overview-card.tsx
+|   |   |       |-- survivor-overview-view.tsx
+|   |   |       |-- survivor-sessions-view.tsx
+|   |   |       |-- survivors-view.tsx
+|   |   |       `-- upcoming-reminders-card.tsx
+|   |   |-- data
+|   |   |   |-- carer-dashboard-data.ts
+|   |   |   |-- carer-invitation-storage.ts
+|   |   |   |-- carer-navigation.ts
+|   |   |   |-- carer-notification-data.ts
+|   |   |   |-- carer-survivors-data.ts
+|   |   |   |-- linked-survivor-data.ts
+|   |   |   |-- survivor-detail-data.ts
+|   |   |   |-- survivor-note-data.ts
+|   |   |   `-- survivor-session-data.ts
+|   |   |-- services
+|   |   |   |-- carer-dashboard-service.ts
+|   |   |   |-- carer-invitation-email.ts
+|   |   |   |-- carer-invitation-service.ts
+|   |   |   |-- carer-notification-service.ts
+|   |   |   `-- carer-survivors-service.ts
+|   |   `-- types
+|   |       |-- carer-invitation.ts
+|   |       |-- carer-notification.ts
+|   |       |-- index.ts
+|   |       |-- linked-survivor.ts
+|   |       |-- session-history.ts
+|   |       |-- shared-note.ts
+|   |       `-- survivor-detail.ts
 |   |-- dashboard
 |   |   |-- components
+|   |   |   |-- dashboard-notification-popover.tsx
 |   |   |   |-- dashboard-view.tsx
+|   |   |   |-- push-notification-preview.tsx
 |   |   |   |-- quick-actions-card.tsx
 |   |   |   |-- streak-card.tsx
 |   |   |   |-- todays-session-card.tsx
 |   |   |   |-- weekly-progress-card.tsx
 |   |   |   `-- welcome-section.tsx
 |   |   |-- data
-|   |   `-- types
+|   |   |-- services
+|   |   |   `-- dashboard-service.ts
+|   |   |-- types
+|   |   |   `-- dashboard-types.ts
+|   |   `-- utils
+|   |       `-- exercise-suggestion.ts
 |   |-- exercises
 |   |   |-- components
 |   |   |   |-- demo
-|   |   |   |       `-- exercise-demo-view.tsx
+|   |   |   |   `-- exercise-demo-view.tsx
 |   |   |   |-- details
-|   |   |   |       `-- exercise-details-view.tsx
+|   |   |   |   `-- exercise-details-view.tsx
 |   |   |   |-- exercise-filter-tabs.tsx
 |   |   |   |-- exercise-library-view.tsx
 |   |   |   `-- exercise-list-item.tsx
 |   |   |-- data
 |   |   |   |-- exercise-details.ts
 |   |   |   `-- exercises.ts
+|   |   |-- services
+|   |   |   `-- exercise-service.ts
 |   |   `-- types
+|   |       |-- exercise.ts
+|   |       `-- index.ts
 |   |-- history
+|   |   |-- components
+|   |   |   |-- history-empty-state.tsx
+|   |   |   |-- history-table.tsx
+|   |   |   `-- history-view.tsx
+|   |   |-- services
+|   |   |   `-- history-service.ts
+|   |   `-- types
+|   |       |-- history.ts
+|   |       `-- index.ts
+|   |-- invitations
+|   |   |-- actions
+|   |   |   `-- carer-invitation-accept-actions.ts
 |   |   `-- components
-|   |       |-- history-empty-state.tsx
-|   |       |-- history-table.tsx
-|   |       `-- history-view.tsx
+|   |       `-- accept-carer-invitation-view.tsx
 |   |-- onboarding
 |   |   `-- components
 |   |       |-- add-carer-step.tsx
@@ -153,20 +453,32 @@ frontend
 |   |   `-- services
 |   |       `-- profile-service.ts
 |   |-- progress
-|   |   `-- components
-|   |       |-- progress-stat-card.tsx
-|   |       |-- progress-view.tsx
-|   |       |-- score-trend-card.tsx
-|   |       `-- top-exercises-card.tsx
+|   |   |-- components
+|   |   |   |-- progress-stat-card.tsx
+|   |   |   |-- progress-view.tsx
+|   |   |   |-- score-trend-card.tsx
+|   |   |   `-- top-exercises-card.tsx
+|   |   |-- services
+|   |   |   `-- progress-service.ts
+|   |   `-- types
+|   |       |-- index.ts
+|   |       `-- progress.ts
 |   |-- reminders
-|   |   `-- components
-|   |       |-- reminder-notification-card.tsx
-|   |       |-- reminder-settings-card.tsx
-|   |       |-- reminders-view.tsx
-|   |       |-- tips-card.tsx
-|   |       `-- weekly-progress-card.tsx
+|   |   |-- components
+|   |   |   |-- reminder-form-modal.tsx
+|   |   |   |-- reminder-notification-card.tsx
+|   |   |   |-- reminder-settings-card.tsx
+|   |   |   |-- reminders-view.tsx
+|   |   |   `-- weekly-progress-card.tsx
+|   |   |-- services
+|   |   |   `-- reminder-service.ts
+|   |   |-- types
+|   |   |   `-- reminder.ts
+|   |   `-- utils
+|   |       `-- reminder-scheduler.ts
 |   |-- sessions
 |   |   |-- components
+|   |   |   |-- audio-preferences-modal.tsx
 |   |   |   |-- camera-placeholder.tsx
 |   |   |   |-- end-session-modal.tsx
 |   |   |   |-- exercise-demo-modal.tsx
@@ -175,22 +487,43 @@ frontend
 |   |   |   |-- rep-progress-card.tsx
 |   |   |   |-- session-complete-modal.tsx
 |   |   |   |-- session-controls.tsx
+|   |   |   |-- session-countdown.tsx
 |   |   |   |-- session-view.tsx
 |   |   |   `-- support-modal.tsx
+|   |   |-- scoring
+|   |   |   |-- accuracy-calculator.ts
+|   |   |   |-- attempt-metric-tracker.ts
+|   |   |   |-- index.ts
+|   |   |   |-- movement-score-calculator.ts
+|   |   |   `-- scoring-types.ts
 |   |   `-- services
 |   |       `-- session-service.ts
-|   `-- settings
-|       `-- components
-|           |-- about-settings.tsx
-|           |-- accessibility-settings.tsx
-|           |-- change-password-settings.tsx
-|           |-- help-support-settings.tsx
-|           |-- preferences-settings.tsx
-|           |-- profile-settings.tsx
-|           |-- profile-summary-card.tsx
-|           |-- settings-sidebar.tsx
-|           `-- settings-view.tsx
-|-- frontend-directory.txt
+|   |-- settings
+|   |   |-- accessibility
+|   |   |   |-- components
+|   |   |   |   |-- accessibility-bootstrap-script.tsx
+|   |   |   |   `-- accessibility-provider.tsx
+|   |   |   |-- services
+|   |   |   |   `-- accessibility-service.ts
+|   |   |   |-- types
+|   |   |   |   `-- accessibility.ts
+|   |   |   `-- utils
+|   |   |       `-- accessibility-runtime.ts
+|   |   |-- components
+|   |   |   |-- about-settings.tsx
+|   |   |   |-- accessibility-settings.tsx
+|   |   |   |-- change-password-settings.tsx
+|   |   |   |-- help-support-settings.tsx
+|   |   |   |-- linked-carer-settings.tsx
+|   |   |   |-- preferences-settings.tsx
+|   |   |   |-- profile-settings.tsx
+|   |   |   |-- profile-summary-card.tsx
+|   |   |   |-- settings-sidebar.tsx
+|   |   |   `-- settings-view.tsx
+|   |   `-- services
+|   |       `-- linked-carer-service.ts
+|   `-- support
+|       `-- nhs-resource-config.ts
 |-- hooks
 |-- lib
 |   |-- supabase
@@ -205,24 +538,68 @@ frontend
 |-- postcss.config.mjs
 |-- proxy.ts
 |-- public
+|   |-- audio
+|   |   |-- effects
+|   |   |   |-- countdown-beep.mp3
+|   |   |   |-- hold-complete.wav
+|   |   |   |-- pause.mp3
+|   |   |   |-- rep-complete.wav
+|   |   |   |-- session-complete.mp3
+|   |   |   `-- tracking-lost.wav
+|   |   |-- licences
+|   |   |   |-- adobe-firefly
+|   |   |   |   |-- adobe-firefly-commercial-safety-page.pdf
+|   |   |   |   |-- firefly-audio-page.pdf
+|   |   |   |   `-- firefly-sound-effects-page.pdf
+|   |   |   |-- audio-licences.csv
+|   |   |   `-- pixabay
+|   |   |       `-- pixabay-content-license-summary.pdf
+|   |   |-- music
+|   |   |   |-- dashboard-background.mp3
+|   |   |   `-- session-background.mp3
+|   |   `-- voice
+|   |       |-- halfway-there.wav
+|   |       |-- ready-when-you-are.wav
+|   |       |-- session-complete.wav
+|   |       `-- tracking-lost.wav
 |   |-- exercises
 |   |   |-- button-fastening
+|   |   |   |-- activities
+|   |   |   |   |-- clothing-fasteners.png
+|   |   |   |   |-- fastening-shirt-button.png
+|   |   |   |   `-- handling-zip.png
 |   |   |   |-- button-fastening-active.png
 |   |   |   |-- button-fastening-start.png
 |   |   |   `-- button-fastening-thumbnail.png
 |   |   |-- hand-function
+|   |   |   |-- activities
+|   |   |   |   |-- opening-hand.png
+|   |   |   |   |-- preparing-to-grasp.png
+|   |   |   |   `-- releasing-item.png
 |   |   |   |-- hand-function-active.png
 |   |   |   |-- hand-function-start.png
 |   |   |   `-- hand-function-thumbnail.png
 |   |   |-- lift-place
+|   |   |   |-- activities
+|   |   |   |   |-- moving-cup.png
+|   |   |   |   |-- placing-item-on-shelf.png
+|   |   |   |   `-- transferring-object.png
 |   |   |   |-- lift-place-active.png
 |   |   |   |-- lift-place-start.png
 |   |   |   `-- lift-place-thumbnail.png
 |   |   |-- reach-grasp
+|   |   |   |-- activities
+|   |   |   |   |-- carrying-lightweight-object.png
+|   |   |   |   |-- holding-cup.png
+|   |   |   |   `-- holding-phone.png
 |   |   |   |-- reach-grasp-active.png
 |   |   |   |-- reach-grasp-start.png
 |   |   |   `-- reach-grasp-thumbnail.png
 |   |   `-- target-touch
+|   |       |-- activities
+|   |       |   |-- reaching-light-switch.png
+|   |       |   |-- reaching-shelf.png
+|   |       |   `-- touching-table-object.png
 |   |       |-- target-touch-active.png
 |   |       |-- target-touch-start.png
 |   |       `-- target-touch-thumbnail.png
@@ -248,11 +625,13 @@ frontend
 |   |-- next.svg
 |   |-- vercel.svg
 |   |-- video
-|   |   `-- Shoulder Flexion video.mp4
+|   |   |-- Shoulder Flexion video.mp4
+|   |   |-- button-fastening-demo.mp4
+|   |   |-- grasp-and-hold-demo.mp4
+|   |   |-- hand-open-close-demo.mp4
+|   |   |-- lift-and-place-demo.mp4
+|   |   `-- target-touch-demo.mp4
 |   `-- window.svg
-|-- services
-|-- styles
-|-- tsconfig.json
-`-- types
+`-- tsconfig.json
 
-81 directories, 174 files
+201 directories, 433 files

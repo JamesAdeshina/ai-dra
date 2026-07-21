@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
@@ -26,6 +29,13 @@ type OverviewMetricProps = {
   value: string;
   helper: string;
   helperClassName?: string;
+};
+
+type ProgressRange = "THIS_WEEK" | "LAST_7_DAYS";
+
+const progressRangeLabels: Record<ProgressRange, string> = {
+  THIS_WEEK: "This Week",
+  LAST_7_DAYS: "Last 7 Days",
 };
 
 function OverviewMetric({
@@ -78,11 +88,65 @@ function OverviewMetric({
   );
 }
 
+function getProgressPointsForRange(
+  points: SurvivorDetail["weeklyProgress"],
+  range: ProgressRange,
+) {
+  if (range === "LAST_7_DAYS") {
+    return points;
+  }
+
+  const today = new Date();
+  const monday = new Date(today);
+  const day = monday.getDay();
+  const daysSinceMonday = day === 0 ? 6 : day - 1;
+
+  monday.setDate(today.getDate() - daysSinceMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  return points.filter((_, index) => {
+    const pointDate = new Date(today);
+    pointDate.setDate(
+      today.getDate() - (points.length - 1 - index),
+    );
+    pointDate.setHours(0, 0, 0, 0);
+
+    return pointDate >= monday && pointDate <= today;
+  });
+}
+
 function WeeklyProgressChart({
   survivor,
 }: {
   survivor: SurvivorDetail;
 }) {
+  const [selectedRange, setSelectedRange] =
+    useState<ProgressRange>("THIS_WEEK");
+
+  const visibleProgress = useMemo(
+    () =>
+      getProgressPointsForRange(
+        survivor.weeklyProgress,
+        selectedRange,
+      ),
+    [selectedRange, survivor.weeklyProgress],
+  );
+
+  const safeProgress =
+    visibleProgress.length > 0
+      ? visibleProgress
+      : survivor.weeklyProgress;
+
+  const averageCompletion =
+    safeProgress.length === 0
+      ? 0
+      : Math.round(
+          safeProgress.reduce(
+            (total, point) => total + point.value,
+            0,
+          ) / safeProgress.length,
+        );
+
   const chart = useMemo(() => {
     const width = 720;
     const height = 230;
@@ -91,43 +155,36 @@ function WeeklyProgressChart({
     const top = 24;
     const bottom = 42;
 
-    const minimum = 40;
+    const minimum = 0;
     const maximum = 100;
 
     const usableWidth = width - left - right;
     const usableHeight = height - top - bottom;
 
-    const points = survivor.weeklyProgress.map(
-      (point, index) => {
-        const x =
-          left +
-          (index /
-            Math.max(
-              survivor.weeklyProgress.length - 1,
-              1,
-            )) *
-            usableWidth;
+    const points = safeProgress.map((point, index) => {
+      const x =
+        left +
+        (index / Math.max(safeProgress.length - 1, 1)) *
+          usableWidth;
 
-        const normalised =
-          (point.value - minimum) /
-          (maximum - minimum);
+      const value = Math.max(
+        minimum,
+        Math.min(maximum, point.value),
+      );
 
-        const y =
-          top +
-          usableHeight -
-          Math.max(
-            0,
-            Math.min(1, normalised),
-          ) *
-            usableHeight;
+      const y =
+        top +
+        usableHeight -
+        ((value - minimum) / (maximum - minimum)) *
+          usableHeight;
 
-        return {
-          ...point,
-          x,
-          y,
-        };
-      },
-    );
+      return {
+        ...point,
+        value,
+        x,
+        y,
+      };
+    });
 
     const linePath = points
       .map(
@@ -156,9 +213,9 @@ function WeeklyProgressChart({
       linePath,
       areaPath,
     };
-  }, [survivor.weeklyProgress]);
+  }, [safeProgress]);
 
-  const gridValues = [60, 70, 80, 90];
+  const gridValues = [0, 25, 50, 75, 100];
 
   return (
     <article className="rounded-2xl border border-[#DEDAD6] bg-white p-4 shadow-[0_1px_4px_rgba(28,23,20,0.04)] sm:p-5">
@@ -167,13 +224,34 @@ function WeeklyProgressChart({
           Weekly Progress Summary
         </h2>
 
-        <button
-          type="button"
-          className="inline-flex min-h-11 items-center justify-between gap-5 rounded-xl border border-[#DEDAD6] px-4 text-sm text-[#403B37]"
-        >
-          This Week
-          <ChevronDown size={17} />
-        </button>
+        <label className="relative inline-flex w-fit">
+          <span className="sr-only">
+            Select progress range
+          </span>
+
+          <select
+            value={selectedRange}
+            onChange={(event) =>
+              setSelectedRange(
+                event.target.value as ProgressRange,
+              )
+            }
+            className="min-h-11 appearance-none rounded-xl border border-[#DEDAD6] bg-white px-4 pr-10 text-sm text-[#403B37] outline-none transition focus:border-[#592EBD] focus:ring-2 focus:ring-[#E9E3F8]"
+          >
+            <option value="THIS_WEEK">
+              This Week
+            </option>
+
+            <option value="LAST_7_DAYS">
+              Last 7 Days
+            </option>
+          </select>
+
+          <ChevronDown
+            size={17}
+            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#403B37]"
+          />
+        </label>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_145px]">
@@ -182,7 +260,7 @@ function WeeklyProgressChart({
             viewBox={`0 0 ${chart.width} ${chart.height}`}
             className="min-w-[620px]"
             role="img"
-            aria-label={`${survivor.name}'s rehabilitation completion trend for this week`}
+            aria-label={`${survivor.name}'s rehabilitation completion trend for ${progressRangeLabels[selectedRange]}`}
           >
             <defs>
               <linearGradient
@@ -209,13 +287,9 @@ function WeeklyProgressChart({
             {gridValues.map((value) => {
               const y =
                 chart.top +
-                (chart.height -
-                  chart.top -
-                  chart.bottom) -
-                ((value - 40) / 60) *
-                  (chart.height -
-                    chart.top -
-                    chart.bottom);
+                (chart.height - chart.top - chart.bottom) -
+                (value / 100) *
+                  (chart.height - chart.top - chart.bottom);
 
               return (
                 <g key={value}>
@@ -240,19 +314,23 @@ function WeeklyProgressChart({
               );
             })}
 
-            <path
-              d={chart.areaPath}
-              fill={`url(#progress-fill-${survivor.id})`}
-            />
+            {chart.areaPath ? (
+              <path
+                d={chart.areaPath}
+                fill={`url(#progress-fill-${survivor.id})`}
+              />
+            ) : null}
 
-            <path
-              d={chart.linePath}
-              fill="none"
-              stroke="#592EBD"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {chart.linePath ? (
+              <path
+                d={chart.linePath}
+                fill="none"
+                stroke="#592EBD"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ) : null}
 
             {chart.points.map((point, index) => (
               <g key={`${point.label}-${index}`}>
@@ -289,11 +367,11 @@ function WeeklyProgressChart({
 
         <div className="flex flex-col justify-center rounded-2xl bg-[#F2EDFF] p-4">
           <p className="text-sm font-medium text-[#403A36]">
-            This Week
+            {progressRangeLabels[selectedRange]}
           </p>
 
           <strong className="mt-2 text-4xl text-[#5523E8]">
-            {survivor.averageCompletion}%
+            {averageCompletion}%
           </strong>
 
           <p className="mt-4 text-xs leading-5 text-[#817A75]">
@@ -360,7 +438,7 @@ export function SurvivorOverviewView({
           iconClassName="text-[#5696ED]"
           label="Last Session"
           value={`${survivor.lastSession.dateLabel}, ${survivor.lastSession.timeLabel}`}
-          helper={`${survivor.lastSession.score}% score`}
+          helper={`${survivor.lastSession.score}% completion`}
           helperClassName="font-semibold text-[#3478EA]"
         />
       </section>

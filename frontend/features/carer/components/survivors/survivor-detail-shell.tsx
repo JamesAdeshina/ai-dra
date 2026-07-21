@@ -1,13 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   ArrowLeft,
   CalendarDays,
+  Loader2,
+  X,
 } from "lucide-react";
 
+import { unlinkSurvivorFromCarer } from "@/features/carer/actions/unlink-survivor-action";
 import { SurvivorDetailSidebar } from "@/features/carer/components/survivors/survivor-detail-sidebar";
 import type { DirectorySurvivorStatus } from "@/features/carer/types";
 import type { SurvivorDetail } from "@/features/carer/types/survivor-detail";
@@ -44,6 +49,14 @@ export function SurvivorDetailShell({
   children,
 }: SurvivorDetailShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [showUnlinkModal, setShowUnlinkModal] =
+    useState(false);
+  const [unlinkError, setUnlinkError] =
+    useState<string | null>(null);
+  const [isPending, startTransition] =
+    useTransition();
+
   const basePath = `/carer/survivors/${survivor.id}`;
   const status = statusPresentation[survivor.status];
 
@@ -88,6 +101,28 @@ export function SurvivorDetailShell({
     );
   }
 
+  function handleConfirmUnlink() {
+    if (isPending) {
+      return;
+    }
+
+    setUnlinkError(null);
+
+    startTransition(async () => {
+      const result =
+        await unlinkSurvivorFromCarer(survivor.id);
+
+      if (!result.ok) {
+        setUnlinkError(result.error);
+        return;
+      }
+
+      setShowUnlinkModal(false);
+      router.push("/carer/survivors");
+      router.refresh();
+    });
+  }
+
   return (
     <section className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-[1240px]">
@@ -102,7 +137,10 @@ export function SurvivorDetailShell({
 
           <button
             type="button"
-            title="Connection removal will be connected to Supabase later"
+            onClick={() => {
+              setUnlinkError(null);
+              setShowUnlinkModal(true);
+            }}
             className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#F23636] px-8 text-sm font-semibold text-white transition hover:bg-[#D92D2D]"
           >
             Unlink Survivor
@@ -228,6 +266,81 @@ export function SurvivorDetailShell({
           <SurvivorDetailSidebar survivor={survivor} />
         </div>
       </div>
+      {showUnlinkModal ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unlink-survivor-title"
+        >
+          <div className="w-full max-w-[520px] rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FFF0F0] text-[#D33B3B]">
+                  <AlertTriangle size={24} />
+                </span>
+
+                <div>
+                  <h2
+                    id="unlink-survivor-title"
+                    className="text-xl font-semibold text-[#272320]"
+                  >
+                    Unlink {survivor.name}?
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-[#5F5752]">
+                    This removes {survivor.name} from your carer view immediately. You will no longer be able to access their rehabilitation progress, sessions, exercises, or notes.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowUnlinkModal(false)}
+                disabled={isPending}
+                className="rounded-full p-2 text-[#817A75] transition hover:bg-[#F5F2EF] hover:text-[#332E2B]"
+                aria-label="Close unlink confirmation"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl bg-[#FFF8E8] p-4 text-sm leading-6 text-[#6B4B00]">
+              The survivor will be notified through the notification queue. Email and push rows will also be queued for delivery.
+            </div>
+
+            {unlinkError ? (
+              <div className="mt-4 rounded-2xl bg-[#FFF0F0] p-4 text-sm leading-6 text-[#B42318]">
+                {unlinkError}
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowUnlinkModal(false)}
+                disabled={isPending}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#DEDAD6] px-6 text-sm font-semibold text-[#3B3633] transition hover:bg-[#F7F4F1] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmUnlink}
+                disabled={isPending}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#F23636] px-6 text-sm font-semibold text-white transition hover:bg-[#D92D2D] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isPending ? (
+                  <Loader2 className="animate-spin" size={17} />
+                ) : null}
+
+                {isPending ? "Unlinking..." : "Yes, unlink survivor"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

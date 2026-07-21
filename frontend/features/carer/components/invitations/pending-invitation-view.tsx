@@ -29,6 +29,10 @@ import {
   resendPendingInvitation,
   saveInvitationDraft,
 } from "@/features/carer/data/carer-invitation-storage";
+import {
+  cancelCarerInvitationAction,
+  resendCarerInvitationAction,
+} from "@/features/carer/actions/carer-invitation-actions";
 import type { PendingCarerInvitation } from "@/features/carer/types/carer-invitation";
 import { cn } from "@/lib/utils";
 
@@ -44,19 +48,39 @@ const relationshipLabels: Record<string, string> = {
   OTHER: "Other",
 };
 
-function formatDate(value: string) {
+function formatDate(value: string | null | undefined) {
+  if (!value) {
+    return "recently";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "recently";
+  }
+
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
 }
 
-function formatTime(value: string) {
+function formatTime(value: string | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
   return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function PendingProgress() {
@@ -223,7 +247,15 @@ function InvitationHelpCard() {
   );
 }
 
-export function PendingInvitationView() {
+type PendingInvitationViewProps = {
+  initialInvitation?: (PendingCarerInvitation & {
+    id?: string;
+  }) | null;
+};
+
+export function PendingInvitationView({
+  initialInvitation = null,
+}: PendingInvitationViewProps) {
   const router = useRouter();
 
   const [invitation, setInvitation] =
@@ -238,10 +270,12 @@ export function PendingInvitationView() {
     useState(false);
 
   useEffect(() => {
-    setInvitation(getPendingInvitation());
+    setInvitation(
+      initialInvitation ?? getPendingInvitation(),
+    );
     setFeedback(consumeInvitationNotice());
     setLoaded(true);
-  }, []);
+  }, [initialInvitation]);
 
   useEffect(() => {
     if (!feedback) {
@@ -293,7 +327,44 @@ Best regards,
 Haruna`;
   }, [invitation]);
 
-  function handleResend() {
+  async function handleResend() {
+    if (!invitation) {
+      return;
+    }
+
+    const invitationId = (
+      invitation as PendingCarerInvitation & {
+        id?: string;
+      }
+    ).id;
+
+    if (invitationId) {
+      const result =
+        await resendCarerInvitationAction(invitationId);
+
+      if (!result.ok) {
+        setFeedback(
+          result.error ??
+            "The invitation could not be resent.",
+        );
+
+        return;
+      }
+
+      const updatedInvitation = {
+        ...invitation,
+        sentAt: new Date().toISOString(),
+      };
+
+      setInvitation(updatedInvitation);
+
+      setFeedback(
+        `Invitation resent to ${updatedInvitation.firstName} ${updatedInvitation.lastName}.`,
+      );
+
+      return;
+    }
+
     const updatedInvitation =
       resendPendingInvitation();
 
@@ -327,8 +398,34 @@ Haruna`;
     router.push("/carer/invitations");
   }
 
-  function handleCancel() {
-    cancelPendingInvitation();
+  async function handleCancel() {
+    if (!invitation) {
+      return;
+    }
+
+    const invitationId = (
+      invitation as PendingCarerInvitation & {
+        id?: string;
+      }
+    ).id;
+
+    if (invitationId) {
+      const result =
+        await cancelCarerInvitationAction(invitationId);
+
+      if (!result.ok) {
+        setShowCancelModal(false);
+
+        setFeedback(
+          result.error ??
+            "The pending invitation could not be cancelled.",
+        );
+
+        return;
+      }
+    } else {
+      cancelPendingInvitation();
+    }
 
     setShowCancelModal(false);
 

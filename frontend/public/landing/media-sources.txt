@@ -1,0 +1,12 @@
+AI-DRA landing page media sources
+
+Profile images downloaded from Unsplash and optimised locally:
+- William Carter demo profile: Age Cymru, https://unsplash.com/photos/0Xv2Paj0RQ4
+- Priya Sharma demo profile: Siddharth Vyas, https://unsplash.com/photos/Sa0YZta_Fb8
+- Dr Maya Roberts demo profile: Vitaly Gariev, https://unsplash.com/photos/_zbqco3m7dA
+
+Local project-created media:
+- logo-mark.svg
+- ai-dra-logo.svg
+- favicon.svg
+- social-preview.png

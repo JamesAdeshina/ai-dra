@@ -782,17 +782,13 @@ export function SessionView({ exercise }: SessionViewProps) {
         }
 
         const shouldShowAutomaticSupport =
-          detectedSupportReason !== null &&
           consecutiveDifficultyAttemptsRef.current >= 2 &&
           !supportShownRef.current &&
-          snapshot.completedRepNumber <
-            rule.targetReps;
+          snapshot.completedRepNumber < rule.targetReps;
 
-        if (shouldShowAutomaticSupport) {
+        if (detectedSupportReason !== null && shouldShowAutomaticSupport) {
           supportShownRef.current = true;
-          setSupportReason(
-            detectedSupportReason
-          );
+          setSupportReason(detectedSupportReason); // now narrowed to SupportReason
           setShowSupportModal(true);
         }
 

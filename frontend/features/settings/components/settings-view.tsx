@@ -5,10 +5,12 @@ import { useState } from "react";
 import { AboutSettings } from "./about-settings";
 import { AccessibilitySettings } from "./accessibility-settings";
 import { HelpSupportSettings } from "./help-support-settings";
+import { LinkedCarerSettings } from "./linked-carer-settings";
 import { PreferencesSettings } from "./preferences-settings";
 import { ProfileSettings } from "./profile-settings";
 import { ProfileSummaryCard } from "./profile-summary-card";
 import { ChangePasswordSettings } from "./change-password-settings";
+
 import {
   SettingsSidebar,
   type SettingsTab,
@@ -37,14 +39,14 @@ export function SettingsView() {
       {activeTab === "Personal Information" && (
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_340px] gap-6">
           <ProfileSettings
-          profile={profile}
-          isLoading={isLoading}
-          error={error}
-          onProfileUpdated={refreshProfile}
-          onChangePassword={() =>
-            setActiveTab("Change Password")
-          }
-        />
+            profile={profile}
+            isLoading={isLoading}
+            error={error}
+            onProfileUpdated={refreshProfile}
+            onChangePassword={() =>
+              setActiveTab("Change Password")
+            }
+          />
 
           <ProfileSummaryCard
             profile={profile}
@@ -56,6 +58,10 @@ export function SettingsView() {
 
       {activeTab === "Change Password" && (
         <ChangePasswordSettings />
+      )}
+
+      {activeTab === "Linked Carer" && (
+        <LinkedCarerSettings />
       )}
 
       {activeTab === "Accessibility" && (

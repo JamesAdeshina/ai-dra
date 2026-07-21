@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useTransition,
 } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -11,7 +12,7 @@ import {
   Bell,
   CalendarClock,
   CalendarDays,
-  CheckCircle2,
+  CheckCheck,
   ChevronDown,
   CircleAlert,
   Flame,
@@ -22,12 +23,15 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-import { carerNotifications } from "@/features/carer/data/carer-notification-data";
+import {
+  markAllCarerNotificationsReadAction,
+  markCarerNotificationReadAction,
+} from "@/features/carer/actions/carer-notification-actions";
 import type {
   CarerNotification,
   CarerNotificationCategory,
   CarerNotificationIcon,
-} from "@/features/carer/types/carer-notification";
+} from "@/features/carer/services/carer-notification-service";
 import { cn } from "@/lib/utils";
 
 type NotificationFilter =
@@ -109,8 +113,10 @@ const categoryPresentation: Record<
 
 function NotificationItem({
   notification,
+  onMarkRead,
 }: {
   notification: CarerNotification;
+  onMarkRead: (notificationId: string) => void;
 }) {
   const icon =
     iconPresentation[notification.icon];
@@ -123,7 +129,7 @@ function NotificationItem({
   return (
     <article
       className={cn(
-        "grid gap-3 border-b border-[#ECE8E4] py-4 last:border-b-0 sm:grid-cols-[44px_minmax(0,1fr)_100px]",
+        "grid gap-3 border-b border-[#ECE8E4] py-4 last:border-b-0 sm:grid-cols-[44px_minmax(0,1fr)_132px]",
         notification.unread && "bg-[#FCFBFF]",
       )}
     >
@@ -173,6 +179,18 @@ function NotificationItem({
         <p className="mt-1 text-xs text-[#817A75]">
           {notification.dateLabel}
         </p>
+
+        {notification.unread ? (
+          <button
+            type="button"
+            onClick={() =>
+              onMarkRead(notification.id)
+            }
+            className="mt-3 text-xs font-semibold text-[#592EBD] transition hover:text-[#4B24A4]"
+          >
+            Mark read
+          </button>
+        ) : null}
       </div>
     </article>
   );
@@ -228,7 +246,14 @@ function SummaryCard({
   );
 }
 
-export function CarerNotificationsView() {
+export function CarerNotificationsView({
+  initialNotifications,
+}: {
+  initialNotifications: CarerNotification[];
+}) {
+  const [notifications, setNotifications] =
+    useState(initialNotifications);
+
   const [activeFilter, setActiveFilter] =
     useState<NotificationFilter>("ALL");
 
@@ -236,21 +261,24 @@ export function CarerNotificationsView() {
     INITIAL_VISIBLE_COUNT,
   );
 
-  const alertCount = carerNotifications.filter(
+  const [isPending, startTransition] =
+    useTransition();
+
+  const alertCount = notifications.filter(
     (notification) =>
       notification.category === "ALERT",
   ).length;
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === "ALL") {
-      return carerNotifications;
+      return notifications;
     }
 
-    return carerNotifications.filter(
+    return notifications.filter(
       (notification) =>
         notification.category === activeFilter,
     );
-  }, [activeFilter]);
+  }, [activeFilter, notifications]);
 
   useEffect(() => {
     setVisibleCount(INITIAL_VISIBLE_COUNT);
@@ -259,17 +287,21 @@ export function CarerNotificationsView() {
   const visibleNotifications =
     filteredNotifications.slice(0, visibleCount);
 
+  const unreadCount = notifications.filter(
+    (notification) => notification.unread,
+  ).length;
+
   const summaryCounts = {
-    activity: carerNotifications.filter(
+    activity: notifications.filter(
       (notification) =>
         notification.category === "ACTIVITY",
     ).length,
-    reminder: carerNotifications.filter(
+    reminder: notifications.filter(
       (notification) =>
         notification.category === "REMINDER",
     ).length,
     alert: alertCount,
-    system: carerNotifications.filter(
+    system: notifications.filter(
       (notification) =>
         notification.category === "SYSTEM",
     ).length,
@@ -283,6 +315,7 @@ export function CarerNotificationsView() {
     {
       id: "ALL",
       label: "All Notifications",
+      count: unreadCount,
     },
     {
       id: "ALERT",
@@ -295,19 +328,65 @@ export function CarerNotificationsView() {
     },
   ];
 
+  const handleMarkRead = (notificationId: string) => {
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.id === notificationId
+          ? {
+              ...notification,
+              unread: false,
+            }
+          : notification,
+      ),
+    );
+
+    startTransition(async () => {
+      await markCarerNotificationReadAction(
+        notificationId,
+      );
+    });
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications((current) =>
+      current.map((notification) => ({
+        ...notification,
+        unread: false,
+      })),
+    );
+
+    startTransition(async () => {
+      await markAllCarerNotificationsReadAction();
+    });
+  };
+
   return (
     <section className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-[1240px]">
-        <div>
-          <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#211E1C]">
-            Notifications
-          </h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-[-0.02em] text-[#211E1C]">
+              Notifications
+            </h1>
 
-          <p className="mt-1 text-sm text-[#5F5955]">
-            Stay updated on rehabilitation activity,
-            reminders and items that may need your
-            attention.
-          </p>
+            <p className="mt-1 text-sm text-[#5F5955]">
+              Stay updated on rehabilitation activity,
+              reminders and items that may need your
+              attention.
+            </p>
+          </div>
+
+          {unreadCount > 0 ? (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleMarkAllRead}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#DDD8D4] bg-white px-4 text-sm font-semibold text-[#403B37] transition hover:border-[#592EBD] hover:text-[#592EBD] disabled:opacity-60"
+            >
+              <CheckCheck size={17} />
+              Mark all as read
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-5 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -336,7 +415,8 @@ export function CarerNotificationsView() {
                   >
                     {tab.label}
 
-                    {tab.count !== undefined ? (
+                    {tab.count !== undefined &&
+                    tab.count > 0 ? (
                       <span className="flex min-h-6 min-w-6 items-center justify-center rounded-md bg-[#3478EA] px-1.5 text-xs font-semibold text-white">
                         {tab.count}
                       </span>
@@ -352,12 +432,13 @@ export function CarerNotificationsView() {
 
             <section className="px-0">
               {visibleNotifications.length > 0 ? (
-                <div >
+                <div>
                   {visibleNotifications.map(
                     (notification) => (
                       <NotificationItem
                         key={notification.id}
                         notification={notification}
+                        onMarkRead={handleMarkRead}
                       />
                     ),
                   )}
@@ -406,13 +487,9 @@ export function CarerNotificationsView() {
                 Notification Summary
               </h2>
 
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#3478EA]"
-              >
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#3478EA]">
                 This Week
-                <ChevronDown size={14} />
-              </button>
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 p-3">
