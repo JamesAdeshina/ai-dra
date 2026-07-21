@@ -1,15 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  FormEvent,
-  useMemo,
-  useState,
-} from "react";
-import {
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +49,20 @@ function getSafeRedirectPath(
   return value;
 }
 
+function getRedirectToFromBrowser() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const params = new URLSearchParams(
+    window.location.search,
+  );
+
+  return getSafeRedirectPath(
+    params.get("redirectTo"),
+  );
+}
+
 export function LoginForm({
   intendedRole = "SURVIVOR",
   forgotPasswordHref = "/auth/forgot-password",
@@ -65,16 +72,7 @@ export function LoginForm({
   description = "Sign in to continue your rehabilitation.",
 }: LoginFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
-
-  const redirectTo = useMemo(
-    () =>
-      getSafeRedirectPath(
-        searchParams.get("redirectTo"),
-      ),
-    [searchParams],
-  );
 
   const [email, setEmail] =
     useState("");
@@ -206,6 +204,9 @@ export function LoginForm({
         return;
       }
 
+      const redirectTo =
+        getRedirectToFromBrowser();
+
       const resolvedDestination =
         redirectTo ??
         (destination &&
@@ -217,9 +218,8 @@ export function LoginForm({
 
       router.refresh();
 
-      window.location.assign(
-        resolvedDestination,
-      );
+      window.location.href =
+        resolvedDestination;
     } catch (error) {
       console.error(
         "Unexpected login error:",
@@ -322,14 +322,14 @@ export function LoginForm({
         </div>
       </div>
 
-      {errorMessage && (
+      {errorMessage ? (
         <p
           role="alert"
           className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
         >
           {errorMessage}
         </p>
-      )}
+      ) : null}
 
       <Link
         href={forgotPasswordHref}
