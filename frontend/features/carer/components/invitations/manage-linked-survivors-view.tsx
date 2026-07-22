@@ -139,13 +139,12 @@ function LinkedSurvivorCard({
         ) : null}
 
         {survivor.status === "PENDING" ? (
-          <button
-            type="button"
-            disabled
-            className="inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-full border border-[#DDD8D4] px-5 text-sm font-semibold text-[#918A85]"
+          <Link
+            href={`/carer/invitations/pending?invitationId=${survivor.id}`}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#DDD8D4] px-5 text-sm font-semibold text-[#403B37] transition hover:border-[#592EBD] hover:text-[#592EBD]"
           >
-            Awaiting Response
-          </button>
+            Manage Invite
+          </Link>
         ) : null}
 
         {survivor.status === "EXPIRED" ? (
