@@ -13,19 +13,25 @@ async function getSiteUrl() {
   }
 
   const headerStore = await headers();
+
   const host =
     headerStore.get("x-forwarded-host") ??
     headerStore.get("host");
 
   const protocol =
     headerStore.get("x-forwarded-proto") ??
-    "https";
+    (host?.includes("localhost")
+      ? "http"
+      : "https");
 
   if (host) {
-    return `${protocol}://${host}`;
+    return `${protocol}://${host}`.replace(
+      /\/$/,
+      "",
+    );
   }
 
-  return "http://localhost:3000";
+  return "https://www.ai-dra.co.uk";
 }
 
 export type InvitationSuccessState = {
@@ -156,14 +162,15 @@ export async function setPasswordForInvitedSurvivorAction(
 
   const siteUrl = await getSiteUrl();
 
+  const redirectTo = `${siteUrl}/auth/callback?next=${encodeURIComponent(
+    "/auth/login",
+  )}`;
+
   const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
     options: {
-      emailRedirectTo: `${siteUrl.replace(
-        /\/$/,
-        "",
-      )}/auth/login`,
+      emailRedirectTo: redirectTo,
       data: {
         first_name: input.firstName,
         last_name: input.lastName,
