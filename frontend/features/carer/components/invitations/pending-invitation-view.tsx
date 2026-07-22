@@ -36,6 +36,59 @@ import {
 import type { PendingCarerInvitation } from "@/features/carer/types/carer-invitation";
 import { cn } from "@/lib/utils";
 
+
+type ProfileResponse = {
+  profile?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    display_name?: string | null;
+  } | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+};
+
+function getCarerNameFromProfile(data: ProfileResponse) {
+  const profile = data.profile ?? data;
+
+  const displayName =
+    profile.display_name?.trim();
+
+  if (displayName) {
+    return displayName;
+  }
+
+  const fullName = [
+    profile.first_name,
+    profile.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return fullName || "your carer";
+}
+
+async function loadCurrentCarerName() {
+  try {
+    const response = await fetch("/api/profile", {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return "your carer";
+    }
+
+    const data =
+      (await response.json()) as ProfileResponse;
+
+    return getCarerNameFromProfile(data);
+  } catch {
+    return "your carer";
+  }
+}
+
+
 const relationshipLabels: Record<string, string> = {
   PARENT: "Parent",
   SPOUSE_PARTNER: "Spouse or Partner",
@@ -266,6 +319,9 @@ export function PendingInvitationView({
   const [feedback, setFeedback] =
     useState<string | null>(null);
 
+  const [carerName, setCarerName] =
+    useState("your carer");
+
   const [showCancelModal, setShowCancelModal] =
     useState(false);
 
@@ -276,6 +332,10 @@ export function PendingInvitationView({
     setFeedback(consumeInvitationNotice());
     setLoaded(true);
   }, [initialInvitation]);
+
+  useEffect(() => {
+    loadCurrentCarerName().then(setCarerName);
+  }, []);
 
   useEffect(() => {
     if (!feedback) {
@@ -308,7 +368,7 @@ export function PendingInvitationView({
         invitation.relationship
       ] ?? invitation.relationship
     );
-  }, [invitation]);
+  }, [invitation, carerName]);
 
   const personalMessage = useMemo(() => {
     if (!invitation) {
@@ -324,8 +384,8 @@ export function PendingInvitationView({
 I’d like to support you during your rehabilitation journey using AI-DRA. Please accept my invitation so we can connect and work together.
 
 Best regards,
-Haruna`;
-  }, [invitation]);
+${carerName}`;
+  }, [invitation, carerName]);
 
   async function handleResend() {
     if (!invitation) {

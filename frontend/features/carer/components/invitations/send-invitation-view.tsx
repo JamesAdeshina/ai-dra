@@ -24,10 +24,63 @@ import {
   getInvitationDraft,
   saveInvitationDraft,
   saveInvitationNotice,
+  savePendingInvitation,
 } from "@/features/carer/data/carer-invitation-storage";
-import { createCarerInvitationAction } from "@/features/carer/actions/carer-invitation-actions";
 import type { CarerInvitationDraft } from "@/features/carer/types/carer-invitation";
 import { cn } from "@/lib/utils";
+
+
+type ProfileResponse = {
+  profile?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    display_name?: string | null;
+  } | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+};
+
+function getCarerNameFromProfile(data: ProfileResponse) {
+  const profile = data.profile ?? data;
+
+  const displayName =
+    profile.display_name?.trim();
+
+  if (displayName) {
+    return displayName;
+  }
+
+  const fullName = [
+    profile.first_name,
+    profile.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return fullName || "your carer";
+}
+
+async function loadCurrentCarerName() {
+  try {
+    const response = await fetch("/api/profile", {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return "your carer";
+    }
+
+    const data =
+      (await response.json()) as ProfileResponse;
+
+    return getCarerNameFromProfile(data);
+  } catch {
+    return "your carer";
+  }
+}
+
 
 const relationshipLabels: Record<string, string> = {
   PARENT: "Parent",
@@ -207,6 +260,9 @@ function InvitationHelpCard() {
 export function SendInvitationView() {
   const router = useRouter();
 
+  const [carerName, setCarerName] =
+    useState("your carer");
+
   const [draft, setDraft] =
     useState<CarerInvitationDraft | null>(null);
 
@@ -220,6 +276,10 @@ export function SendInvitationView() {
   useEffect(() => {
     setDraft(getInvitationDraft());
     setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    loadCurrentCarerName().then(setCarerName);
   }, []);
 
   useEffect(() => {
@@ -252,7 +312,7 @@ export function SendInvitationView() {
       relationshipLabels[draft.relationship] ??
       draft.relationship
     );
-  }, [draft]);
+  }, [draft, carerName]);
 
   const personalMessage = useMemo(() => {
     if (!draft) {
@@ -268,8 +328,8 @@ export function SendInvitationView() {
 I’d like to support you during your rehabilitation journey using AI-DRA. Please accept my invitation so we can connect and work together.
 
 Best regards,
-Haruna`;
-  }, [draft]);
+${carerName}`;
+  }, [draft, carerName]);
 
   function handleSaveDraft() {
     if (!draft) {
@@ -281,45 +341,33 @@ Haruna`;
     setFeedback("Invitation saved as a draft.");
   }
 
-  async function handleSendInvitation() {
+  function handleSendInvitation() {
     if (!draft || isSending) {
       return;
     }
 
     setIsSending(true);
 
-    const result =
-      await createCarerInvitationAction({
-        firstName: draft.firstName,
-        lastName: draft.lastName,
-        email: draft.email,
-        phone: draft.phone,
-        relationship: draft.relationship,
-        customRelationship:
-          draft.customRelationship,
-        message: draft.message,
-      });
+    window.setTimeout(() => {
+      const pendingInvitation =
+        savePendingInvitation(draft);
 
-    setIsSending(false);
+      if (!pendingInvitation) {
+        setIsSending(false);
 
-    if (!result.ok) {
-      setFeedback(
-        result.error ??
+        setFeedback(
           "The invitation could not be sent. Please try again.",
+        );
+
+        return;
+      }
+
+      saveInvitationNotice(
+        `Invitation sent to ${draft.firstName} ${draft.lastName}.`,
       );
 
-      return;
-    }
-
-    saveInvitationNotice(
-      `Invitation sent to ${draft.firstName} ${draft.lastName}.`,
-    );
-
-    router.push(
-      result.invitationId
-        ? `/carer/invitations/pending?invitationId=${result.invitationId}`
-        : "/carer/invitations/pending",
-    );
+      router.push("/carer/invitations/pending");
+    }, 700);
   }
 
   if (!loaded) {
