@@ -23,10 +23,7 @@ import {
 } from "lucide-react";
 
 import {
-  cancelPendingInvitation,
   consumeInvitationNotice,
-  getPendingInvitation,
-  resendPendingInvitation,
   saveInvitationDraft,
 } from "@/features/carer/data/carer-invitation-storage";
 import {
@@ -312,7 +309,12 @@ export function PendingInvitationView({
   const router = useRouter();
 
   const [invitation, setInvitation] =
-    useState<PendingCarerInvitation | null>(null);
+    useState<
+      | (PendingCarerInvitation & {
+          id?: string;
+        })
+      | null
+    >(null);
 
   const [loaded, setLoaded] = useState(false);
 
@@ -326,9 +328,7 @@ export function PendingInvitationView({
     useState(false);
 
   useEffect(() => {
-    setInvitation(
-      initialInvitation ?? getPendingInvitation(),
-    );
+    setInvitation(initialInvitation ?? null);
     setFeedback(consumeInvitationNotice());
     setLoaded(true);
   }, [initialInvitation]);
@@ -392,45 +392,32 @@ ${carerName}`;
       return;
     }
 
-    const invitationId = (
-      invitation as PendingCarerInvitation & {
-        id?: string;
-      }
-    ).id;
+    const invitationId = invitation.id;
 
-    if (invitationId) {
-      const result =
-        await resendCarerInvitationAction(invitationId);
-
-      if (!result.ok) {
-        setFeedback(
-          result.error ??
-            "The invitation could not be resent.",
-        );
-
-        return;
-      }
-
-      const updatedInvitation = {
-        ...invitation,
-        sentAt: new Date().toISOString(),
-      };
-
-      setInvitation(updatedInvitation);
-
+    if (!invitationId) {
       setFeedback(
-        `Invitation resent to ${updatedInvitation.firstName} ${updatedInvitation.lastName}.`,
+        "This invitation could not be resent because it was not found in the live database.",
       );
 
       return;
     }
 
-    const updatedInvitation =
-      resendPendingInvitation();
+    const result =
+      await resendCarerInvitationAction(invitationId);
 
-    if (!updatedInvitation) {
+    if (!result.ok) {
+      setFeedback(
+        result.error ??
+          "The invitation could not be resent.",
+      );
+
       return;
     }
+
+    const updatedInvitation = {
+      ...invitation,
+      sentAt: new Date().toISOString(),
+    };
 
     setInvitation(updatedInvitation);
 
@@ -463,28 +450,30 @@ ${carerName}`;
       return;
     }
 
-    const invitationId = (
-      invitation as PendingCarerInvitation & {
-        id?: string;
-      }
-    ).id;
+    const invitationId = invitation.id;
 
-    if (invitationId) {
-      const result =
-        await cancelCarerInvitationAction(invitationId);
+    if (!invitationId) {
+      setShowCancelModal(false);
 
-      if (!result.ok) {
-        setShowCancelModal(false);
+      setFeedback(
+        "This invitation could not be cancelled because it was not found in the live database.",
+      );
 
-        setFeedback(
-          result.error ??
-            "The pending invitation could not be cancelled.",
-        );
+      return;
+    }
 
-        return;
-      }
-    } else {
-      cancelPendingInvitation();
+    const result =
+      await cancelCarerInvitationAction(invitationId);
+
+    if (!result.ok) {
+      setShowCancelModal(false);
+
+      setFeedback(
+        result.error ??
+          "The pending invitation could not be cancelled.",
+      );
+
+      return;
     }
 
     setShowCancelModal(false);
@@ -703,12 +692,8 @@ ${carerName}`;
 
                     <p className="mt-2 text-sm leading-6 text-[#746D68]">
                       {invitation.firstName} will receive
-                      an email
-                      {invitation.phone
-                        ? " and SMS"
-                        : ""}{" "}
-                      with instructions to accept the
-                      invitation. You will be notified
+                      an email with instructions to accept
+                      the invitation. You will be notified
                       when the account is linked.
                     </p>
                   </div>

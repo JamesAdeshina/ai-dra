@@ -295,44 +295,23 @@ export async function resendCarerInvitationAction(
 export async function cancelCarerInvitationAction(
   invitationId: string,
 ): Promise<ActionResult> {
-  const cleanInvitationId =
-    invitationId.trim();
+  const cleanInvitationId = invitationId.trim();
 
   if (!cleanInvitationId) {
     return {
       ok: false,
-      error:
-        "Invitation ID is required.",
+      error: "Invitation ID is required.",
     };
   }
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return {
-      ok: false,
-      error:
-        "You must be signed in to cancel an invitation.",
-    };
-  }
-
-  const { error } = await supabase
-    .from("carer_invitations")
-    .update({
-      status: "CANCELLED",
-      cancelled_at:
-        new Date().toISOString(),
-      updated_at:
-        new Date().toISOString(),
-    })
-    .eq("id", cleanInvitationId)
-    .eq("inviter_id", user.id)
-    .eq("status", "PENDING");
+  const { data, error } = await supabase.rpc(
+    "cancel_carer_invitation",
+    {
+      p_invitation_id: cleanInvitationId,
+    },
+  );
 
   if (error) {
     console.error(
@@ -348,12 +327,23 @@ export async function cancelCarerInvitationAction(
     };
   }
 
+  const result = Array.isArray(data)
+    ? data[0]
+    : data;
+
+  if (!result) {
+    return {
+      ok: false,
+      error:
+        "Cancel request completed but no result was returned.",
+    };
+  }
+
   revalidateInvitationPaths();
 
   return {
     ok: true,
-    invitationId:
-      cleanInvitationId,
+    invitationId: cleanInvitationId,
   };
 }
 
