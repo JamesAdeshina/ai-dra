@@ -10,9 +10,11 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
+  Loader2,
   Link2Off,
   Mail,
   Phone,
+  Plus,
   RefreshCw,
   ShieldCheck,
   UserRound,
@@ -26,6 +28,7 @@ import {
   unlinkCarer,
   type LinkedCarer,
 } from "@/features/settings/services/linked-carer-service";
+import { createSurvivorCarerInvitationAction } from "@/features/settings/actions/survivor-carer-invitation-actions";
 
 function formatLinkedDate(value: string) {
   const date = new Date(value);
@@ -59,6 +62,25 @@ function getInitials(carer: LinkedCarer) {
   return initials || "AC";
 }
 
+
+type AddCarerForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  relationship: string;
+  message: string;
+};
+
+const initialAddCarerForm: AddCarerForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  relationship: "",
+  message: "",
+};
+
 export function LinkedCarerSettings() {
   const [carers, setCarers] =
     useState<LinkedCarer[]>([]);
@@ -77,6 +99,15 @@ export function LinkedCarerSettings() {
 
   const [successMessage, setSuccessMessage] =
     useState<string | null>(null);
+
+  const [showAddCarerModal, setShowAddCarerModal] =
+    useState(false);
+
+  const [isSendingInvite, setIsSendingInvite] =
+    useState(false);
+
+  const [addCarerForm, setAddCarerForm] =
+    useState<AddCarerForm>(initialAddCarerForm);
 
   const loadCarers = useCallback(async () => {
     setIsLoading(true);
@@ -133,6 +164,56 @@ export function LinkedCarerSettings() {
       setIsUnlinking(false);
     }
   };
+
+  const updateAddCarerField = (
+    field: keyof AddCarerForm,
+    value: string
+  ) => {
+    setAddCarerForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleSendCarerInvite = async () => {
+    if (isSendingInvite) {
+      return;
+    }
+
+    setIsSendingInvite(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const result =
+      await createSurvivorCarerInvitationAction({
+        firstName: addCarerForm.firstName,
+        lastName: addCarerForm.lastName,
+        email: addCarerForm.email,
+        phone: addCarerForm.phone,
+        relationship: addCarerForm.relationship,
+        message: addCarerForm.message,
+      });
+
+    setIsSendingInvite(false);
+
+    if (!result.ok) {
+      setErrorMessage(
+        result.error ??
+          "The carer invitation could not be sent."
+      );
+
+      return;
+    }
+
+    setShowAddCarerModal(false);
+    setAddCarerForm(initialAddCarerForm);
+
+    setSuccessMessage(
+      result.warning ??
+        "Your invitation has been sent to the carer. They will be linked once they accept."
+    );
+  };
+
 
   return (
     <div className="space-y-6">
@@ -204,6 +285,17 @@ export function LinkedCarerSettings() {
               <p className="mt-2 max-w-[440px] text-[15px] leading-[160%] text-[#666666] dark:text-[#C7C9CE]">
                 You are not currently sharing rehabilitation information with a carer.
               </p>
+
+              <Button
+                type="button"
+                onClick={() =>
+                  setShowAddCarerModal(true)
+                }
+                className="mt-6 h-12 rounded-full bg-[#592EBD] px-7 text-white hover:bg-[#4B24A8]"
+              >
+                <Plus size={18} />
+                Add Carer
+              </Button>
             </div>
           ) : (
             <div className="space-y-5">
@@ -377,6 +469,17 @@ export function LinkedCarerSettings() {
             <p className="mt-2 text-[14px] leading-[160%] text-[#666666] dark:text-[#C7C9CE]">
               A linked carer can support your rehabilitation and view only the information you have permitted.
             </p>
+
+            <Button
+              type="button"
+              onClick={() =>
+                setShowAddCarerModal(true)
+              }
+              className="mt-5 w-full rounded-full bg-[#592EBD] text-white hover:bg-[#4B24A8]"
+            >
+              <Plus size={17} />
+              Add Carer
+            </Button>
           </div>
 
           <div className="rounded-2xl bg-white p-6 dark:bg-[#1C1E22]">
@@ -399,6 +502,187 @@ export function LinkedCarerSettings() {
           </div>
         </aside>
       </div>
+
+        {showAddCarerModal ? (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-carer-title"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+          >
+            <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#1C1E22] sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2
+                    id="add-carer-title"
+                    className="text-[26px] font-bold text-[#1E1E1E] dark:text-white"
+                  >
+                    Invite a carer
+                  </h2>
+
+                  <p className="mt-2 text-[15px] leading-[160%] text-[#666666] dark:text-[#C7C9CE]">
+                    Add the carer&apos;s details and AI-DRA will email them an invitation to connect with you.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAddCarerModal(false)
+                  }
+                  className="rounded-full p-2 text-[#666666] hover:bg-[#F2EEFC] hover:text-[#592EBD]"
+                  aria-label="Close add carer form"
+                >
+                  <Link2Off size={20} />
+                </button>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-[14px] font-semibold text-[#1E1E1E] dark:text-white">
+                    First name
+                  </span>
+                  <input
+                    value={addCarerForm.firstName}
+                    onChange={(event) =>
+                      updateAddCarerField(
+                        "firstName",
+                        event.target.value
+                      )
+                    }
+                    className="h-12 w-full rounded-xl border border-[#DDD8D4] bg-white px-4 text-[15px] outline-none focus:border-[#592EBD] dark:bg-[#111216]"
+                    placeholder="e.g. Grace"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[14px] font-semibold text-[#1E1E1E] dark:text-white">
+                    Last name
+                  </span>
+                  <input
+                    value={addCarerForm.lastName}
+                    onChange={(event) =>
+                      updateAddCarerField(
+                        "lastName",
+                        event.target.value
+                      )
+                    }
+                    className="h-12 w-full rounded-xl border border-[#DDD8D4] bg-white px-4 text-[15px] outline-none focus:border-[#592EBD] dark:bg-[#111216]"
+                    placeholder="e.g. Asogbon"
+                  />
+                </label>
+
+                <label className="space-y-2 sm:col-span-2">
+                  <span className="text-[14px] font-semibold text-[#1E1E1E] dark:text-white">
+                    Email address
+                  </span>
+                  <input
+                    type="email"
+                    value={addCarerForm.email}
+                    onChange={(event) =>
+                      updateAddCarerField(
+                        "email",
+                        event.target.value
+                      )
+                    }
+                    className="h-12 w-full rounded-xl border border-[#DDD8D4] bg-white px-4 text-[15px] outline-none focus:border-[#592EBD] dark:bg-[#111216]"
+                    placeholder="carer@example.com"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[14px] font-semibold text-[#1E1E1E] dark:text-white">
+                    Phone number
+                  </span>
+                  <input
+                    value={addCarerForm.phone}
+                    onChange={(event) =>
+                      updateAddCarerField(
+                        "phone",
+                        event.target.value
+                      )
+                    }
+                    className="h-12 w-full rounded-xl border border-[#DDD8D4] bg-white px-4 text-[15px] outline-none focus:border-[#592EBD] dark:bg-[#111216]"
+                    placeholder="Optional"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[14px] font-semibold text-[#1E1E1E] dark:text-white">
+                    Relationship
+                  </span>
+                  <input
+                    value={addCarerForm.relationship}
+                    onChange={(event) =>
+                      updateAddCarerField(
+                        "relationship",
+                        event.target.value
+                      )
+                    }
+                    className="h-12 w-full rounded-xl border border-[#DDD8D4] bg-white px-4 text-[15px] outline-none focus:border-[#592EBD] dark:bg-[#111216]"
+                    placeholder="e.g. Daughter, friend, carer"
+                  />
+                </label>
+
+                <label className="space-y-2 sm:col-span-2">
+                  <span className="text-[14px] font-semibold text-[#1E1E1E] dark:text-white">
+                    Message
+                  </span>
+                  <textarea
+                    value={addCarerForm.message}
+                    onChange={(event) =>
+                      updateAddCarerField(
+                        "message",
+                        event.target.value
+                      )
+                    }
+                    rows={4}
+                    className="w-full rounded-xl border border-[#DDD8D4] bg-white px-4 py-3 text-[15px] outline-none focus:border-[#592EBD] dark:bg-[#111216]"
+                    placeholder="Optional message to include in the invitation email"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSendingInvite}
+                  onClick={() =>
+                    setShowAddCarerModal(false)
+                  }
+                  className="rounded-full"
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="button"
+                  disabled={
+                    isSendingInvite ||
+                    !addCarerForm.email.trim()
+                  }
+                  onClick={() =>
+                    void handleSendCarerInvite()
+                  }
+                  className="rounded-full bg-[#592EBD] text-white hover:bg-[#4B24A8]"
+                >
+                  {isSendingInvite ? (
+                    <>
+                      <Loader2 className="animate-spin" size={17} />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail size={17} />
+                      Send Invitation
+                    </>
+                  )}
+                </Button>
+              </div>
+            </section>
+          </div>
+        ) : null}
     </div>
   );
 }

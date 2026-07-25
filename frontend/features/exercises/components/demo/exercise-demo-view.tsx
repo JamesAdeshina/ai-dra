@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -36,6 +37,15 @@ export function ExerciseDemoView({
     useState(false);
 
   const [isSpeaking, setIsSpeaking] =
+    useState(false);
+
+  const videoRef =
+    useRef<HTMLVideoElement | null>(null);
+
+  const [demoPlayCount, setDemoPlayCount] =
+    useState(0);
+
+  const [showReadyPrompt, setShowReadyPrompt] =
     useState(false);
 
   const instruction = useMemo(() => {
@@ -132,6 +142,37 @@ export function ExerciseDemoView({
     setIsSpeaking(true);
   };
 
+  const handleDemoEnded = () => {
+    setDemoPlayCount((currentCount) => {
+      const nextCount = currentCount + 1;
+
+      if (nextCount >= 2) {
+        setShowReadyPrompt(true);
+      } else {
+        const video = videoRef.current;
+
+        if (video) {
+          video.currentTime = 0;
+          void video.play();
+        }
+      }
+
+      return nextCount;
+    });
+  };
+
+  const handlePlayDemoAgain = () => {
+    const video = videoRef.current;
+
+    setShowReadyPrompt(false);
+    setDemoPlayCount(0);
+
+    if (video) {
+      video.currentTime = 0;
+      void video.play();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Link
@@ -174,15 +215,16 @@ export function ExerciseDemoView({
           <div className="mt-6 flex h-[470px] items-center justify-center overflow-hidden rounded-2xl bg-[#F7F4F2]">
             {exercise.demoVideoUrl ? (
               <video
+                ref={videoRef}
                 src={
                   exercise.demoVideoUrl
                 }
                 controls
                 autoPlay
-                loop
                 muted
                 playsInline
                 preload="metadata"
+                onEnded={handleDemoEnded}
                 className="h-full w-full rounded-2xl object-contain"
               >
                 Your browser does not support
@@ -310,12 +352,66 @@ export function ExerciseDemoView({
               className="h-20 w-full rounded-full bg-[#592EBD] text-[22px] hover:bg-[#4B24A8]"
             >
               <Link href={sessionHref}>
-                Start Exercise
+                Yes, Start Exercise
               </Link>
             </Button>
           </div>
         </div>
       </div>
+
+      {showReadyPrompt ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="demo-ready-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+        >
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#ECE8FF] text-[#592EBD]">
+              <Play size={26} fill="currentColor" />
+            </div>
+
+            <h2
+              id="demo-ready-title"
+              className="mt-5 text-[26px] font-bold text-[#1E1E1E]"
+            >
+              Are you ready to start?
+            </h2>
+
+            <p className="mt-3 text-[17px] leading-[150%] text-[#5F5A55]">
+              You have watched the demonstration.
+              You can watch it again or move on to
+              the camera setup and exercise session.
+            </p>
+
+            <div className="mt-7 grid gap-3">
+              <Button
+                asChild
+                className="h-14 rounded-full bg-[#592EBD] text-[17px] font-semibold hover:bg-[#4B24A8]"
+              >
+                <Link href={sessionHref}>
+                  Yes, I&apos;m Ready to Start
+                </Link>
+              </Button>
+
+              <button
+                type="button"
+                onClick={handlePlayDemoAgain}
+                className="min-h-14 rounded-full border border-[#DDD8D4] px-5 text-[16px] font-semibold text-[#403B37] transition hover:border-[#592EBD] hover:text-[#592EBD]"
+              >
+                Watch Demonstration Again
+              </button>
+
+              <Link
+                href={`/exercises/${exercise.slug}`}
+                className="inline-flex min-h-14 items-center justify-center rounded-full px-5 text-[16px] font-semibold text-[#746D68] transition hover:text-[#592EBD]"
+              >
+                Not Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
