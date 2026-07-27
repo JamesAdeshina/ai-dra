@@ -29,6 +29,7 @@ const PUBLIC_ROUTES = new Set([
   "/auth/reset-password",
 
   "/invitations/carer/accept",
+  "/invitations/survivor/accept",
 
   "/carer/auth/login",
   "/carer/auth/register",
