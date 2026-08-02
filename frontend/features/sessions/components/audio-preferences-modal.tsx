@@ -66,7 +66,7 @@ function AudioOption({
         }`}
         onClick={() => onChange(!enabled)}
         className={[
-          "relative h-7 w-12 shrink-0 rounded-full transition-colors",
+          "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors duration-200",
           "focus:outline-none focus-visible:ring-4 focus-visible:ring-[#592EBD]/25",
           enabled
             ? "bg-[#592EBD]"
@@ -74,11 +74,12 @@ function AudioOption({
         ].join(" ")}
       >
         <span
+          aria-hidden="true"
           className={[
-            "absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+            "pointer-events-none absolute left-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200",
             enabled
               ? "translate-x-6"
-              : "translate-x-1",
+              : "translate-x-0",
           ].join(" ")}
         />
       </button>
