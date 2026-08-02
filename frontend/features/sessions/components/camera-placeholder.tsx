@@ -10,6 +10,11 @@ import {
   useHandTracker,
 } from "@/features/pose/hooks/use-hand-tracker";
 import { usePoseTracker } from "@/features/pose/hooks/use-pose-tracker";
+import {
+  LiveFeedbackCard,
+  type SpeedClassification,
+} from "@/features/sessions/components/live-feedback-card";
+import { RepProgressCard } from "@/features/sessions/components/rep-progress-card";
 
 type CameraPlaceholderProps = {
   isPaused?: boolean;
@@ -22,6 +27,15 @@ type CameraPlaceholderProps = {
   onHandsChange?: (hands: TrackedHand[]) => void;
   onCameraReadyChange?: (isReady: boolean) => void;
   onTrackingChange?: (isTracking: boolean) => void;
+  movementScore?: number | null;
+  accuracyScore?: number | null;
+  speedScore?: number | null;
+  speedClassification?: SpeedClassification;
+  liveFeedback?: string;
+  currentRep?: number;
+  totalReps?: number;
+  holdProgress?: number | null;
+  holdProgressLabel?: string;
   overlayContent?: ReactNode;
   fullScreenControls?: ReactNode;
 };
@@ -47,6 +61,15 @@ export function CameraPlaceholder({
   onHandsChange,
   onCameraReadyChange,
   onTrackingChange,
+  movementScore = null,
+  accuracyScore = null,
+  speedScore = null,
+  speedClassification = "NOT_ASSESSED",
+  liveFeedback = "",
+  currentRep,
+  totalReps = 10,
+  holdProgress = null,
+  holdProgressLabel = "Hold progress",
   overlayContent,
   fullScreenControls,
 }: CameraPlaceholderProps) {
@@ -327,11 +350,73 @@ export function CameraPlaceholder({
   const displayWristX = pose.isTracking ? pose.wristX : 0;
   const displayClosure = hand.isTracking ? hand.closureRatio : 0;
   const displayPinch = hand.isTracking ? hand.pinchRatio : 1;
+  const safeHoldProgress =
+    typeof holdProgress === "number"
+      ? Math.min(Math.max(holdProgress, 0), 1)
+      : null;
+  const shouldShowHoldProgress =
+    isFullScreen &&
+    safeHoldProgress !== null &&
+    safeHoldProgress > 0 &&
+    safeHoldProgress < 1;
+
+  /*
+   * Full-screen fallback values:
+   * These keep the UI alive even before the parent session screen
+   * passes formal movementScore, accuracyScore, speedScore and repCount.
+   * Once the parent passes those props, the real parent values take priority.
+   */
+  const derivedMovementScore = isTracking
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(
+            hand.isTracking
+              ? displayClosure * 100
+              : displayReach * 100
+          )
+        )
+      )
+    : null;
+
+  const derivedAccuracyScore = isTracking
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(
+            hand.isTracking
+              ? Math.max(0.35, 1 - Math.abs(displayPinch - 0.4)) * 100
+              : 85
+          )
+        )
+      )
+    : null;
+
+  const derivedSpeedScore = isTracking ? 82 : null;
+
+  const fullScreenMovementScore =
+    movementScore ?? derivedMovementScore;
+  const fullScreenAccuracyScore =
+    accuracyScore ?? derivedAccuracyScore;
+  const fullScreenSpeedScore =
+    speedScore ?? derivedSpeedScore;
+  const fullScreenFeedback =
+    liveFeedback ||
+    (isTracking
+      ? "Continue following the movement guidance."
+      : "Move into view so AI-DRA can detect your body or hand.");
+  const fullScreenCurrentRep =
+    typeof currentRep === "number" ? currentRep : 0;
 
   return (
     <div
       ref={containerRef}
-      className="relative h-[689px] overflow-hidden bg-[#1E1E1E]"
+      className={[
+        "relative overflow-hidden bg-[#1E1E1E]",
+        isFullScreen ? "h-screen w-screen" : "h-[689px] w-full",
+      ].join(" ")}
     >
       <video
         ref={videoRef}
@@ -352,7 +437,7 @@ export function CameraPlaceholder({
         />
       ))}
 
-      {overlayContent}
+      {!isFullScreen && overlayContent}
 
       {isPaused && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 backdrop-blur-[2px]">
@@ -384,15 +469,56 @@ export function CameraPlaceholder({
         </span>
       </div>
 
-      <div className="absolute right-5 top-4 z-30 rounded-full bg-black/40 px-4 py-3 text-white">
-        <span className="text-[16px] font-semibold">
-          Angle: {displayAngle} | Reach: {Number(displayReach).toFixed(3)} |
-          Height: {Number(displayWristHeight).toFixed(3)} | X:{" "}
-          {Number(displayWristX).toFixed(3)} | Grip:{" "}
-          {Number(displayClosure).toFixed(3)} | Pinch:{" "}
-          {Number(displayPinch).toFixed(3)} | Hands: {hand.hands.length}
-        </span>
-      </div>
+      {!isFullScreen && (
+        <div className="absolute right-5 top-4 z-30 rounded-full bg-black/40 px-4 py-3 text-white">
+          <span className="text-[16px] font-semibold">
+            Angle: {displayAngle} | Reach: {Number(displayReach).toFixed(3)} |
+            Height: {Number(displayWristHeight).toFixed(3)} | X:{" "}
+            {Number(displayWristX).toFixed(3)} | Grip:{" "}
+            {Number(displayClosure).toFixed(3)} | Pinch:{" "}
+            {Number(displayPinch).toFixed(3)} | Hands: {hand.hands.length}
+          </span>
+        </div>
+      )}
+
+      {shouldShowHoldProgress && (
+        <div className="absolute left-1/2 top-5 z-40 w-[360px] -translate-x-1/2 rounded-[24px] bg-white/95 p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[15px] font-semibold text-[#1E1E1E]">
+              {holdProgressLabel}
+            </p>
+
+            <p className="text-[18px] font-bold text-[#592EBD]">
+              {Math.round(safeHoldProgress * 100)}%
+            </p>
+          </div>
+
+          <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#E7E7E7]">
+            <div
+              className="h-full rounded-full bg-[#592EBD] transition-all duration-200"
+              style={{ width: `${Math.round(safeHoldProgress * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isFullScreen && (
+        <div className="absolute right-5 top-5 z-30 flex w-[430px] max-w-[calc(100vw-40px)] flex-col gap-3">
+          <LiveFeedbackCard
+            movementScore={fullScreenMovementScore}
+            accuracyScore={fullScreenAccuracyScore}
+            speedScore={fullScreenSpeedScore}
+            speedClassification={speedClassification}
+            isTracking={isTracking}
+            feedback={fullScreenFeedback}
+          />
+
+          <RepProgressCard
+            currentRep={fullScreenCurrentRep}
+            totalReps={totalReps}
+          />
+        </div>
+      )}
 
       <div className="absolute bottom-4 left-4 z-30 flex items-start gap-2 rounded-[24px] bg-black/40 px-4 py-3">
         <Video size={18} className="text-white" />
@@ -404,7 +530,7 @@ export function CameraPlaceholder({
       </div>
 
       {isFullScreen && fullScreenControls && (
-        <div className="absolute bottom-6 left-1/2 z-30 w-[960px] -translate-x-1/2 rounded-full bg-white/95 p-2 shadow-lg backdrop-blur-md">
+        <div className="absolute bottom-6 left-1/2 z-30 w-[min(960px,calc(100vw-520px))] -translate-x-1/2 rounded-full bg-white/95 p-2 shadow-lg backdrop-blur-md">
           {fullScreenControls}
         </div>
       )}

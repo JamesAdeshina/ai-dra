@@ -2753,6 +2753,25 @@ export function SessionView({ exercise }: SessionViewProps) {
                 />
               ) : null
             }
+            movementScore={
+              latestMovementScore
+            }
+            accuracyScore={
+              latestAccuracyScore
+            }
+            speedScore={
+              latestSpeedScore
+            }
+            speedClassification={
+              latestSpeedClassification
+            }
+            liveFeedback={feedback}
+            currentRep={repCount}
+            totalReps={
+              rule.targetReps
+            }
+            holdProgress={holdProgress}
+            holdProgressLabel="Hold progress"
           />
 
           {hasSessionStarted && (
@@ -3036,4 +3055,3 @@ function createEmptyAttemptMetricSummary(): AttemptMetricSummary {
     trackedFrames: 0,
   };
 }
-
