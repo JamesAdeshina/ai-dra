@@ -61,7 +61,7 @@ export const exercises = [
 
   {
     id: "hand-function",
-    title: "Hand Function Task",
+    title: "Open and Close Your Hand",
     description: "Open, close and control your hand movements.",
     category: "Grip / Pinch",
     level: "Level 2",

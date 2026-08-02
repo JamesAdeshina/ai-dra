@@ -139,7 +139,7 @@ export const exerciseDetails = {
 
   "hand-function": {
     slug: "hand-function",
-    title: "Hand Function Task",
+    title: "Open and Close Your Hand",
     category: "Hand and Finger Exercise",
     description:
       "Hand Function tasks help improve hand opening, closing, finger movement, and grip strength.",

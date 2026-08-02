@@ -61,7 +61,7 @@ export const exerciseRules: Record<string, ExerciseRule> = {
     completeThreshold: 0,
     returnThreshold: 0,
 
-    gripThreshold: 0.6,
+    gripThreshold: 0.4,
     releaseThreshold: 0.2,
     holdDurationMs: 3000,
 
