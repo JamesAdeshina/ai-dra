@@ -65,6 +65,21 @@ export function RegisterForm({
   const [successMessage, setSuccessMessage] =
     useState("");
 
+  const alternateRegisterHref =
+    accountRole === "CARER"
+      ? "/auth/register"
+      : "/carer/auth/register";
+
+  const alternateRegisterPrompt =
+    accountRole === "CARER"
+      ? "Registering as a survivor?"
+      : "Registering as a carer?";
+
+  const alternateRegisterLabel =
+    accountRole === "CARER"
+      ? "Create survivor account"
+      : "Create carer account";
+
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
   ) => {
@@ -348,6 +363,16 @@ export function RegisterForm({
           className="font-semibold text-blue-600"
         >
           Log in
+        </Link>
+      </p>
+
+      <p className="mt-3 text-center text-[15px] text-[#757575]">
+        {alternateRegisterPrompt}{" "}
+        <Link
+          href={alternateRegisterHref}
+          className="font-semibold text-[#592EBD]"
+        >
+          {alternateRegisterLabel}
         </Link>
       </p>
     </form>

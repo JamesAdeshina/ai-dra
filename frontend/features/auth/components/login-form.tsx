@@ -359,6 +359,18 @@ export function LoginForm({
           </Link>
         </p>
       ) : null}
+
+      {intendedRole !== "CARER" ? (
+        <p className="mt-3 text-center text-[15px] text-[#757575]">
+          Registering as a carer?{" "}
+          <Link
+            href="/carer/auth/register"
+            className="font-semibold text-[#592EBD]"
+          >
+            Create carer account
+          </Link>
+        </p>
+      ) : null}
     </form>
   );
 }

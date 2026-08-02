@@ -325,6 +325,18 @@ export function RoleAwareLoginForm({
         </p>
       ) : null}
 
+      {intendedRole !== "CARER" ? (
+        <p className="text-center text-[14px] text-[#666666]">
+          Registering as a carer?{" "}
+          <Link
+            href="/carer/auth/register"
+            className="font-semibold text-[#592EBD] hover:underline"
+          >
+            Create carer account
+          </Link>
+        </p>
+      ) : null}
+
       <p className="text-center text-[12px] leading-[150%] text-[#999999]">
         After sign-in, AI-DRA checks your assigned role and redirects you to the correct portal.
       </p>

@@ -378,7 +378,7 @@ export const landingMarkup = `<header class="aidra-site-header" id="siteHeader">
 </div>
 <div>
 <div class="aidra-footer-title">Project</div>
-<ul class="aidra-footer-links"><li><a href="#difference">Why AI-DRA</a></li><li><a href="#research">Research approach</a></li><li><a href="#journey">How it works</a></li><li><a href="/auth/register">Register</a></li><li><a href="/auth/login">Log in</a></li></ul>
+<ul class="aidra-footer-links"><li><a href="#difference">Why AI-DRA</a></li><li><a href="#research">Research approach</a></li><li><a href="#journey">How it works</a></li><li><a href="/auth/carer/register">Carer Register</a></li><li><a href="/auth/carer/login">Carer Log in</a></li></ul>
 </div>
 </div>
 <div class="aidra-footer-bottom"><span>© 2026 AI-DRA Project. All rights reserved.</span><span>University of Derby • School of Computing and College of Science and Engineering</span></div>
