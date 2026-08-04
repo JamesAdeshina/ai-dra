@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -28,6 +30,7 @@ import { WeeklyProgressCard } from "./weekly-progress-card";
 import {
   createReminder,
   deleteReminder,
+  processDueRemindersForCurrentUser,
   toggleReminder,
   updateReminder,
   updateReminderPreferences,
@@ -99,6 +102,88 @@ export function RemindersView({
   const [isPending, startTransition] =
     useTransition();
 
+  const isCheckingDueRemindersRef =
+    useRef(false);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !preferences.remindersEnabled
+    ) {
+      return;
+    }
+
+    const checkDueReminders = async () => {
+      if (isCheckingDueRemindersRef.current) {
+        return;
+      }
+
+      isCheckingDueRemindersRef.current = true;
+
+      try {
+        const result =
+          await processDueRemindersForCurrentUser();
+
+        if (result.processed.length === 0) {
+          return;
+        }
+
+        const processedReminders =
+          result.processed.map(
+            (item) => item.reminder
+          );
+
+        setReminders((current) =>
+          current.map((reminder) => {
+            const updated =
+              processedReminders.find(
+                (item) =>
+                  item.id === reminder.id
+              );
+
+            return updated ?? reminder;
+          })
+        );
+
+        const latestReminder =
+          processedReminders[0];
+
+        if (latestReminder) {
+          setPreviewReminder(latestReminder);
+
+          if (
+            preferences.pushNotificationsEnabled
+          ) {
+            await showBrowserReminderNotification(
+              latestReminder
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Reminder watcher failed:",
+          error
+        );
+      } finally {
+        isCheckingDueRemindersRef.current = false;
+      }
+    };
+
+    void checkDueReminders();
+
+    const interval =
+      window.setInterval(
+        checkDueReminders,
+        30000
+      );
+
+    return () =>
+      window.clearInterval(interval);
+  }, [
+    preferences.remindersEnabled,
+    preferences.pushNotificationsEnabled,
+  ]);
+
   const defaultReminders =
     useMemo(
       () =>
@@ -133,10 +218,25 @@ export function RemindersView({
       ]
     );
 
-  const handlePreferenceChange = (
+  const handlePreferenceChange = async (
     input: UpdateReminderPreferencesInput
   ) => {
     setErrorMessage(null);
+
+    if (
+      input.pushNotificationsEnabled === true
+    ) {
+      const permission =
+        await requestBrowserNotificationPermission();
+
+      if (permission === "denied") {
+        setErrorMessage(
+          "Browser notifications are blocked. Please enable notifications in your browser settings."
+        );
+
+        return;
+      }
+    }
 
     const previous = preferences;
 
@@ -1083,6 +1183,65 @@ function ActionButton({
     </button>
   );
 }
+
+
+async function requestBrowserNotificationPermission(): Promise<NotificationPermission | "unsupported"> {
+  if (
+    typeof window === "undefined" ||
+    !("Notification" in window)
+  ) {
+    return "unsupported";
+  }
+
+  if (Notification.permission === "granted") {
+    return "granted";
+  }
+
+  if (Notification.permission === "denied") {
+    return "denied";
+  }
+
+  return Notification.requestPermission();
+}
+
+async function showBrowserReminderNotification(
+  reminder: Reminder
+): Promise<void> {
+  if (
+    typeof window === "undefined" ||
+    !("Notification" in window)
+  ) {
+    return;
+  }
+
+  let permission = Notification.permission;
+
+  if (permission === "default") {
+    permission =
+      await Notification.requestPermission();
+  }
+
+  if (permission !== "granted") {
+    return;
+  }
+
+  const notification = new Notification(
+    reminder.title,
+    {
+      body: reminder.message,
+      icon: "/images/logo.svg",
+      badge: "/images/logo.svg",
+      tag: `ai-dra-reminder-${reminder.id}`,
+      renotify: true,
+    }
+  );
+
+  notification.onclick = () => {
+    window.focus();
+    notification.close();
+  };
+}
+
 
 function getNextReminder({
   reminders,

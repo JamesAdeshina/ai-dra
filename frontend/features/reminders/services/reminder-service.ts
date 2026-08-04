@@ -91,6 +91,16 @@ type ReminderRow = {
   updated_at: string;
 };
 
+export type ProcessedReminderNotification = {
+  reminder: Reminder;
+  emailSent: boolean;
+  browserNotificationRequested: boolean;
+};
+
+export type ProcessDueRemindersResult = {
+  processed: ProcessedReminderNotification[];
+};
+
 export async function getReminderPageData(): Promise<ReminderPageData> {
   const { supabase, userId } = await getAuthenticatedContext();
 
@@ -385,6 +395,213 @@ export async function updateReminderPreferences(
   revalidateReminderRoutes();
   return mapPreferences(data as ReminderPreferencesRow);
 }
+
+
+export async function processDueRemindersForCurrentUser(): Promise<ProcessDueRemindersResult> {
+  const { supabase, userId } = await getAuthenticatedContext();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const preferences = await getOrCreateReminderPreferencesWithContext(
+    supabase,
+    userId
+  );
+
+  if (!preferences.remindersEnabled) {
+    return { processed: [] };
+  }
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  const { data, error } = await supabase
+    .from("reminders")
+    .select("*")
+    .eq("survivor_id", userId)
+    .eq("is_enabled", true)
+    .not("next_trigger_at", "is", null)
+    .lte("next_trigger_at", nowIso)
+    .order("next_trigger_at", {
+      ascending: true,
+    })
+    .limit(5);
+
+  if (error) {
+    console.error("Failed to load due reminders:", error);
+    throw new Error("Due reminders could not be checked.");
+  }
+
+  const dueRows = (data ?? []) as ReminderRow[];
+
+  if (dueRows.length === 0) {
+    return { processed: [] };
+  }
+
+  const processed: ProcessedReminderNotification[] = [];
+
+  for (const row of dueRows) {
+    const nextTriggerAt =
+      row.frequency === "ONCE"
+        ? null
+        : calculateNextTrigger({
+            frequency: row.frequency,
+            timeOfDay: normaliseDatabaseTime(row.time_of_day),
+            scheduledDate: row.scheduled_date,
+            daysOfWeek: row.days_of_week ?? [],
+            timezone: preferences.timezone,
+            fromDate: new Date(now.getTime() + 1000),
+          });
+
+    const updatePayload =
+      row.frequency === "ONCE"
+        ? {
+            last_triggered_at: nowIso,
+            next_trigger_at: null,
+            is_enabled: false,
+            updated_at: nowIso,
+          }
+        : {
+            last_triggered_at: nowIso,
+            next_trigger_at: nextTriggerAt,
+            updated_at: nowIso,
+          };
+
+    const { data: updated, error: updateError } = await supabase
+      .from("reminders")
+      .update(updatePayload)
+      .eq("id", row.id)
+      .eq("survivor_id", userId)
+      .select("*")
+      .single();
+
+    if (updateError) {
+      console.error("Failed to update triggered reminder:", updateError);
+      continue;
+    }
+
+    await createReminderInAppNotification({
+      supabase,
+      userId,
+      targetEmail: user?.email ?? null,
+      reminder: row,
+    });
+
+    const emailSent = await sendReminderEmail({
+      to: user?.email ?? null,
+      reminder: row,
+    });
+
+    processed.push({
+      reminder: mapReminder((updated ?? row) as ReminderRow),
+      emailSent,
+      browserNotificationRequested: preferences.pushNotificationsEnabled,
+    });
+  }
+
+  revalidateReminderRoutes();
+
+  return { processed };
+}
+
+async function createReminderInAppNotification({
+  supabase,
+  userId,
+  targetEmail,
+  reminder,
+}: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  userId: string;
+  targetEmail: string | null;
+  reminder: ReminderRow;
+}): Promise<void> {
+  const { error } = await supabase
+    .from("notification_outbox")
+    .insert({
+      recipient_user_id: userId,
+      actor_user_id: userId,
+      type: "REMINDER_DUE",
+      channel: "IN_APP",
+      title: reminder.title,
+      body: reminder.message,
+      payload: {
+        reminder_id: reminder.id,
+        reminder_type: reminder.reminder_type,
+        source: "reminder_scheduler",
+      },
+      status: "PENDING",
+      created_at: new Date().toISOString(),
+      target_user_id: userId,
+      target_email: targetEmail,
+    });
+
+  if (error) {
+    console.warn("Reminder in-app notification was not stored:", error);
+  }
+}
+
+async function sendReminderEmail({
+  to,
+  reminder,
+}: {
+  to: string | null | undefined;
+  reminder: ReminderRow;
+}): Promise<boolean> {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail =
+    process.env.RESEND_FROM_EMAIL ??
+    "AI-DRA <no-reply@mail.ai-dra.co.uk>";
+
+  if (!to || !resendApiKey) {
+    console.warn("Reminder email skipped because recipient or Resend key is missing.");
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to,
+        subject: `AI-DRA reminder: ${reminder.title}`,
+        text: `${reminder.title}\n\n${reminder.message}\n\nThis is your AI-DRA rehabilitation reminder.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1E1E1E;">
+            <h2 style="margin: 0 0 12px; color: #592EBD;">${escapeHtml(reminder.title)}</h2>
+            <p style="margin: 0 0 16px;">${escapeHtml(reminder.message)}</p>
+            <p style="margin: 0; color: #666666;">This is your AI-DRA rehabilitation reminder.</p>
+          </div>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      const responseText = await response.text();
+      console.error("Resend reminder email failed:", response.status, responseText);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Reminder email could not be sent:", error);
+    return false;
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 
 async function getOrCreateReminderPreferencesWithContext(
   supabase: Awaited<ReturnType<typeof createClient>>,

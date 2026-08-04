@@ -39,9 +39,9 @@ export const exerciseRules: Record<string, ExerciseRule> = {
     targetReps: 10,
     primaryMetric: "wrist-reach",
 
-    startThreshold: 0.25,
-    completeThreshold: 0.4,
-    returnThreshold: 0.28,
+    startThreshold: 0.35,
+    completeThreshold: 0.55,
+    returnThreshold: 0.25,
 
     feedback: {
       start: "Start with your arm relaxed.",
