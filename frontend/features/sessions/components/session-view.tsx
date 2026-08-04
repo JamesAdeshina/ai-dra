@@ -2560,11 +2560,11 @@ export function SessionView({ exercise }: SessionViewProps) {
 
   return (
     <>
-      <div className="grid grid-cols-[minmax(0,1fr)_446px] gap-[26px]">
-        <div className="overflow-hidden rounded-2xl bg-white">
-          <div className="flex items-center justify-between px-[30px] py-4">
-            <div className="flex items-center gap-[13px]">
-              <div className="flex h-[91px] w-[91px] items-center justify-center rounded-xl bg-[#F7F4F2] p-2">
+      <div className="grid min-w-0 grid-cols-1 gap-[26px] 2xl:grid-cols-[minmax(0,1fr)_446px]">
+        <div className="min-w-0 overflow-hidden rounded-2xl bg-white">
+          <div className="flex flex-col gap-4 px-4 py-4 sm:px-[30px] xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 items-center gap-[13px]">
+              <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-xl bg-[#F7F4F2] p-2 sm:h-[91px] sm:w-[91px]">
                 <Image
                   src={
                     exercise.images.thumbnail
@@ -2577,20 +2577,20 @@ export function SessionView({ exercise }: SessionViewProps) {
                 />
               </div>
 
-              <div>
-                <h1 className="text-[28px] font-semibold text-[#1E1E1E]">
+              <div className="min-w-0">
+                <h1 className="break-words text-[24px] font-semibold leading-tight text-[#1E1E1E] sm:text-[28px]">
                   {exercise.title}
                 </h1>
 
-                <p className="text-[20px] text-[#888888]">
+                <p className="mt-1 text-[16px] leading-[140%] text-[#888888] sm:text-[20px]">
                   {feedback ||
                     exercise.instruction}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex h-[72px] min-w-[148px] items-center justify-center rounded-[24px] bg-[#F5F5F5] px-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex h-[64px] min-w-[136px] items-center justify-center rounded-[24px] bg-[#F5F5F5] px-3 sm:h-[72px] sm:min-w-[148px]">
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-2 text-[#757575]">
                     <Timer
@@ -2603,7 +2603,7 @@ export function SessionView({ exercise }: SessionViewProps) {
                     </span>
                   </div>
 
-                  <p className="mt-1 text-[20px] font-semibold leading-none text-[#010E0E]">
+                  <p className="mt-1 text-[18px] font-semibold leading-none text-[#010E0E] sm:text-[20px]">
                     {sessionDuration}
                   </p>
                 </div>
@@ -2611,7 +2611,7 @@ export function SessionView({ exercise }: SessionViewProps) {
 
               <div className="rounded-[30px] bg-black/10 p-2 backdrop-blur-md">
                 <div
-                  className={`rounded-[24px] px-6 py-4 text-[18px] font-semibold text-white ${
+                  className={`rounded-[24px] px-5 py-3 text-[16px] font-semibold text-white sm:px-6 sm:py-4 sm:text-[18px] ${
                     isPaused
                       ? "bg-[#F59E0B]"
                       : "bg-[#40C057]"
@@ -2625,7 +2625,7 @@ export function SessionView({ exercise }: SessionViewProps) {
 
           {holdProgress > 0 &&
             holdProgress < 1 && (
-              <div className="px-[30px] pb-4">
+              <div className="px-4 pb-4 sm:px-[30px]">
                 <div className="h-3 w-full overflow-hidden rounded-full bg-[#E5E5E5]">
                   <div
                     className="h-full rounded-full bg-[#592EBD] transition-all duration-100"
@@ -2638,7 +2638,7 @@ export function SessionView({ exercise }: SessionViewProps) {
                 </div>
               </div>
             )}
- 
+
           <CameraPlaceholder
             isPaused={isPaused}
             onCameraReadyChange={
@@ -2651,7 +2651,7 @@ export function SessionView({ exercise }: SessionViewProps) {
               <>
                 {shouldShowStartOverlay && (
                   <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-6 backdrop-blur-[2px]">
-                    <div className="max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl">
+                    <div className="w-full max-w-md rounded-3xl bg-white p-6 text-center shadow-2xl sm:p-7">
                       <h2 className="text-2xl font-semibold text-[#1E1E1E]">
                         Ready to begin?
                       </h2>
@@ -2687,7 +2687,7 @@ export function SessionView({ exercise }: SessionViewProps) {
                   (!isCameraReady ||
                     !isTrackingReady) && (
                     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/45 px-6 backdrop-blur-[2px]">
-                      <div className="max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl">
+                      <div className="w-full max-w-md rounded-3xl bg-white p-6 text-center shadow-2xl sm:p-7">
                         <h2 className="text-2xl font-semibold text-[#1E1E1E]">
                           Preparing your session
                         </h2>
@@ -2775,7 +2775,7 @@ export function SessionView({ exercise }: SessionViewProps) {
           />
 
           {hasSessionStarted && (
-            <div className="px-[30px] py-6">
+            <div className="px-4 py-6 sm:px-[30px]">
               <SessionControls
                 isPaused={isPaused}
                 isSpeaking={isSpeaking}
@@ -2796,7 +2796,7 @@ export function SessionView({ exercise }: SessionViewProps) {
           )}
         </div>
 
-        <div className="space-y-[26px]">
+        <div className="min-w-0 space-y-[26px]">
           <LiveFeedbackCard
             movementScore={
               latestMovementScore

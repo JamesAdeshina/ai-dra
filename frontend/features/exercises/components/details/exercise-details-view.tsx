@@ -79,7 +79,7 @@ export function ExerciseDetailsView({
     );
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6 overflow-hidden">
       <Link
         href="/exercises"
         className="inline-flex items-center gap-2 text-[16px] font-medium text-[#7875FB] transition hover:text-[#592EBD]"
@@ -88,18 +88,18 @@ export function ExerciseDetailsView({
         Back to Exercises
       </Link>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr]">
+      <div className="grid min-w-0 grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,1fr)]">
         <div className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-[112px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 sm:h-[112px] sm:w-[112px]">
               <ExerciseImage
                 src={thumbnailImage}
                 alt={exercise.title}
               />
             </div>
 
-            <div>
-              <h1 className="text-[28px] font-bold text-[#1E1E1E] sm:text-[34px]">
+            <div className="min-w-0">
+              <h1 className="break-words text-[28px] font-bold leading-tight text-[#1E1E1E] sm:text-[34px]">
                 {exercise.title}
               </h1>
 
@@ -119,8 +119,8 @@ export function ExerciseDetailsView({
             </div>
           </div>
 
-          <Card className="grid grid-cols-1 overflow-hidden rounded-2xl border-0 bg-white p-5 shadow-none lg:grid-cols-[1fr_260px]">
-            <div className="rounded-2xl bg-[#F7F4F2] p-4 sm:p-8">
+          <Card className="grid min-w-0 grid-cols-1 overflow-hidden rounded-2xl border-0 bg-white p-4 shadow-none sm:p-5 xl:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="min-w-0 rounded-2xl bg-[#F7F4F2] p-4 sm:p-8">
               <ExerciseAnimation
                 startImage={startImage}
                 endImage={activeImage}
@@ -130,12 +130,12 @@ export function ExerciseDetailsView({
                 title={exercise.title}
               />
 
-              <div className="mt-5 rounded-2xl bg-[#ECE8FF] px-6 py-5 text-[17px] font-semibold leading-[150%] text-[#1E1E1E]">
+              <div className="mt-5 rounded-2xl bg-[#ECE8FF] px-4 py-4 text-[16px] font-semibold leading-[150%] text-[#1E1E1E] sm:px-6 sm:py-5 sm:text-[17px]">
                 {instruction}
               </div>
             </div>
 
-            <div className="mt-6 space-y-5 border-t pt-6 lg:mt-0 lg:border-l lg:border-t-0 lg:px-6 lg:pt-0">
+            <div className="mt-6 space-y-5 border-t pt-6 xl:mt-0 xl:border-l xl:border-t-0 xl:px-6 xl:pt-0">
               <SummaryItem
                 icon={<Target />}
                 label="Target Repetitions"
@@ -185,7 +185,7 @@ export function ExerciseDetailsView({
                 </p>
               </div>
             ) : (
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
                 {exercise.steps.map(
                   (step, index) => {
                     const stepImage =
@@ -231,7 +231,7 @@ export function ExerciseDetailsView({
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Card className="rounded-2xl border-0 bg-white p-6 shadow-none">
             <h2 className="text-[22px] font-bold text-[#1E1E1E]">
               About This Exercise
@@ -306,7 +306,7 @@ export function ExerciseDetailsView({
                 </p>
               </div>
             ) : (
-              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-1">
                 {activities.map(
                   (activity, index) => (
                     <div
@@ -344,11 +344,11 @@ export function ExerciseDetailsView({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-1">
             <Button
               asChild
               variant="outline"
-              className="h-16 rounded-full text-[18px]"
+              className="h-14 rounded-full text-[16px] sm:h-16 sm:text-[18px]"
             >
               <Link
                 href={`/exercises/${exercise.slug}/demo`}
@@ -360,7 +360,7 @@ export function ExerciseDetailsView({
 
             <Button
               asChild
-              className="h-16 rounded-full bg-[#592EBD] text-[18px] hover:bg-[#4B24A8]"
+              className="h-14 rounded-full bg-[#592EBD] text-[16px] hover:bg-[#4B24A8] sm:h-16 sm:text-[18px]"
             >
               <Link
                 href={`/exercises/${exercise.slug}/start`}
@@ -394,7 +394,7 @@ function ExerciseAnimation({
 
   if (!firstImage && !secondImage) {
     return (
-      <div className="relative flex h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-[#F7F4F2]">
+      <div className="relative flex h-[220px] items-center justify-center overflow-hidden rounded-2xl bg-[#F7F4F2] sm:h-[260px]">
         <ImageIcon
           aria-hidden="true"
           className="h-16 w-16 text-neutral-400"
@@ -409,7 +409,7 @@ function ExerciseAnimation({
     firstImage === secondImage
   ) {
     return (
-      <div className="relative flex h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-[#F7F4F2]">
+      <div className="relative flex h-[220px] items-center justify-center overflow-hidden rounded-2xl bg-[#F7F4F2] sm:h-[260px]">
         <ExerciseImage
           src={firstImage ?? secondImage}
           alt={`${title} exercise position`}
@@ -428,7 +428,7 @@ function ExerciseAnimation({
         height={520}
         quality={100}
         priority
-        className="absolute h-[420px] w-[420px] object-contain animate-[fadeOne_2.4s_ease-in-out_infinite]"
+        className="absolute h-[300px] w-[300px] object-contain animate-[fadeOne_2.4s_ease-in-out_infinite] sm:h-[420px] sm:w-[420px]"
       />
 
       <Image
@@ -438,7 +438,7 @@ function ExerciseAnimation({
         height={520}
         quality={100}
         priority
-        className="absolute h-[420px] w-[420px] object-contain animate-[fadeTwo_2.4s_ease-in-out_infinite]"
+        className="absolute h-[300px] w-[300px] object-contain animate-[fadeTwo_2.4s_ease-in-out_infinite] sm:h-[420px] sm:w-[420px]"
       />
     </div>
   );
