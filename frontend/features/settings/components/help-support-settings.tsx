@@ -8,7 +8,7 @@ export function HelpSupportSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[40px] font-bold text-[#1E1E1E]">
+        <h1 className="text-[32px] font-bold text-[#1E1E1E] sm:text-[40px]">
           Help & Support
         </h1>
 
@@ -17,7 +17,7 @@ export function HelpSupportSettings() {
         </p>
       </div>
 
-      <div className="grid grid-cols-[1fr_340px] gap-6">
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="rounded-2xl bg-white p-8">
           <h2 className="mb-6 text-[28px] font-semibold">
             Frequently Asked Questions

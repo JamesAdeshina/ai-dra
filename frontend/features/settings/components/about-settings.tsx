@@ -9,7 +9,7 @@ export function AboutSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[40px] font-bold text-[#1E1E1E] dark:text-white">
+        <h1 className="text-[32px] font-bold text-[#1E1E1E] dark:text-white sm:text-[40px]">
           About AI-DRA
         </h1>
 
@@ -18,7 +18,7 @@ export function AboutSettings() {
         </p>
       </div>
 
-      <div className="grid grid-cols-[420px_minmax(0,1fr)] gap-6">
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[360px_minmax(0,1fr)]">
         <div className="space-y-4">
           <div className="rounded-2xl bg-white p-8 text-center dark:bg-[#1C1E22]">
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#ECE8FF]">

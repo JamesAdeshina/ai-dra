@@ -30,14 +30,14 @@ export function SettingsView() {
   } = useCurrentProfile();
 
   return (
-    <main className="grid grid-cols-[360px_minmax(0,1fr)] gap-6">
+    <main className="grid grid-cols-1 gap-6 xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
       <SettingsSidebar
         active={activeTab}
         onChange={setActiveTab}
       />
 
       {activeTab === "Personal Information" && (
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_340px] gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
           <ProfileSettings
             profile={profile}
             isLoading={isLoading}
@@ -57,27 +57,39 @@ export function SettingsView() {
       )}
 
       {activeTab === "Change Password" && (
-        <ChangePasswordSettings />
+        <div className="min-w-0">
+          <ChangePasswordSettings />
+        </div>
       )}
 
       {activeTab === "Linked Carer" && (
-        <LinkedCarerSettings />
+        <div className="min-w-0">
+          <LinkedCarerSettings />
+        </div>
       )}
 
       {activeTab === "Accessibility" && (
-        <AccessibilitySettings />
+        <div className="min-w-0">
+          <AccessibilitySettings />
+        </div>
       )}
 
       {activeTab === "Preferences" && (
-        <PreferencesSettings />
+        <div className="min-w-0">
+          <PreferencesSettings />
+        </div>
       )}
 
       {activeTab === "Help & Support" && (
-        <HelpSupportSettings />
+        <div className="min-w-0">
+          <HelpSupportSettings />
+        </div>
       )}
 
       {activeTab === "About" && (
-        <AboutSettings />
+        <div className="min-w-0">
+          <AboutSettings />
+        </div>
       )}
     </main>
   );

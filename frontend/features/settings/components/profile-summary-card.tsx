@@ -179,7 +179,7 @@ export function ProfileSummaryCard({
 
   if (isLoading && !profile) {
     return (
-      <div className="rounded-2xl bg-white p-8">
+      <div className="w-full min-w-0 rounded-2xl bg-white p-6 sm:p-8">
         <h2 className="text-[24px] font-semibold text-[#1E1E1E]">
           Profile Summary
         </h2>
@@ -192,7 +192,7 @@ export function ProfileSummaryCard({
   }
 
   return (
-    <div className="rounded-2xl bg-white p-8">
+    <div className="w-full min-w-0 rounded-2xl bg-white p-6 sm:p-8">
       <h2 className="text-[24px] font-semibold text-[#1E1E1E]">
         Profile Summary
       </h2>
@@ -300,7 +300,7 @@ export function ProfileSummaryCard({
             Rehabilitation Level
           </p>
 
-          <p className="mt-1 text-[28px] leading-tight text-[#1E1E1E]">
+          <p className="mt-1 break-words text-[24px] leading-tight text-[#1E1E1E] sm:text-[28px]">
             {rehabilitationLevel}
           </p>
         </div>
@@ -311,7 +311,7 @@ export function ProfileSummaryCard({
               Weekly Goal
             </p>
 
-            <p className="mt-1 text-[28px] leading-tight text-[#1E1E1E]">
+            <p className="mt-1 break-words text-[24px] leading-tight text-[#1E1E1E] sm:text-[28px]">
               {weeklyGoal}
             </p>
           </div>

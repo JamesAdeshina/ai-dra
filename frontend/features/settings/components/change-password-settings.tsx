@@ -203,9 +203,9 @@ export function ChangePasswordSettings() {
   };
 
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_340px] gap-6">
+    <div className="grid min-w-0 grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div>
-        <h1 className="text-[40px] font-bold text-[#1E1E1E]">
+        <h1 className="text-[32px] font-bold text-[#1E1E1E] sm:text-[40px]">
           Change Password
         </h1>
 
