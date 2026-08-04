@@ -1232,7 +1232,6 @@ async function showBrowserReminderNotification(
       icon: "/images/logo.svg",
       badge: "/images/logo.svg",
       tag: `ai-dra-reminder-${reminder.id}`,
-      renotify: true,
     }
   );
 
