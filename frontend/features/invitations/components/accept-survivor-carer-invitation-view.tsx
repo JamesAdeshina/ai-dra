@@ -70,7 +70,7 @@ export function AcceptSurvivorCarerInvitationView({
     `/invitations/survivor/accept?token=${token}`,
   )}`;
 
-  const registerHref = `/auth/register?redirectTo=${encodeURIComponent(
+  const registerHref = `/carer/auth/register?redirectTo=${encodeURIComponent(
     `/invitations/survivor/accept?token=${token}`,
   )}&email=${encodeURIComponent(
     invitation.inviteeEmail,
