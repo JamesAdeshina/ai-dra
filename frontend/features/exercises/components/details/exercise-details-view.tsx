@@ -1,3 +1,11 @@
+"use client";
+
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -11,6 +19,8 @@ import {
   Target,
   ThumbsUp,
   Timer,
+  Volume2,
+  Square,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -64,6 +74,150 @@ export function ExerciseDetailsView({
       })
     );
 
+  const cappedTargetReps = Math.min(
+    exercise.defaultTargetReps,
+    8
+  );
+
+  const audioInstructionText = useMemo(
+    () =>
+      buildAudioInstructions({
+        exercise,
+        activities,
+        instruction,
+        cappedTargetReps,
+      }),
+    [
+      exercise,
+      activities,
+      instruction,
+      cappedTargetReps,
+    ]
+  );
+
+  const [isPlayingInstructions, setIsPlayingInstructions] =
+    useState(false);
+
+  const [audioProgress, setAudioProgress] =
+    useState(0);
+
+  const progressTimerRef =
+    useRef<ReturnType<typeof setInterval> | null>(
+      null
+    );
+
+  const clearProgressTimer = () => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearProgressTimer();
+
+      if (typeof window !== "undefined") {
+        window.speechSynthesis?.cancel();
+      }
+    };
+  }, []);
+
+  const handleAudioInstructions = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (isPlayingInstructions) {
+      window.speechSynthesis.cancel();
+      clearProgressTimer();
+      setIsPlayingInstructions(false);
+      setAudioProgress(0);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    clearProgressTimer();
+    setAudioProgress(0);
+
+    const utterance =
+      new SpeechSynthesisUtterance(
+        audioInstructionText
+      );
+
+    utterance.rate = 0.88;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    const estimatedDurationMs = Math.max(
+      8000,
+      audioInstructionText.split(/\s+/).length *
+        430
+    );
+
+    const startedAt = Date.now();
+
+    progressTimerRef.current = setInterval(
+      () => {
+        const elapsed =
+          Date.now() - startedAt;
+
+        const estimatedProgress = Math.min(
+          95,
+          Math.round(
+            (elapsed / estimatedDurationMs) * 100
+          )
+        );
+
+        setAudioProgress(
+          (currentProgress) =>
+            Math.max(
+              currentProgress,
+              estimatedProgress
+            )
+        );
+      },
+      300
+    );
+
+    utterance.onboundary = (event) => {
+      if (
+        typeof event.charIndex === "number" &&
+        audioInstructionText.length > 0
+      ) {
+        setAudioProgress(
+          Math.min(
+            95,
+            Math.round(
+              (event.charIndex /
+                audioInstructionText.length) *
+                100
+            )
+          )
+        );
+      }
+    };
+
+    utterance.onend = () => {
+      clearProgressTimer();
+      setAudioProgress(100);
+      setIsPlayingInstructions(false);
+
+      window.setTimeout(() => {
+        setAudioProgress(0);
+      }, 900);
+    };
+
+    utterance.onerror = () => {
+      clearProgressTimer();
+      setIsPlayingInstructions(false);
+      setAudioProgress(0);
+    };
+
+    setIsPlayingInstructions(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
   const holdDuration =
     exercise.defaultHoldDurationMs
       ? `${Math.round(
@@ -74,7 +228,7 @@ export function ExerciseDetailsView({
 
   const durationLabel =
     getEstimatedDuration(
-      exercise.defaultTargetReps,
+      cappedTargetReps,
       exercise.defaultHoldDurationMs
     );
 
@@ -90,33 +244,41 @@ export function ExerciseDetailsView({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-[112px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2">
-              <ExerciseImage
-                src={thumbnailImage}
-                alt={exercise.title}
-              />
-            </div>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex h-[96px] w-[96px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 sm:h-[112px] sm:w-[112px]">
+                <ExerciseImage
+                  src={thumbnailImage}
+                  alt={exercise.title}
+                />
+              </div>
 
-            <div>
-              <h1 className="text-[28px] font-bold text-[#1E1E1E] sm:text-[34px]">
-                {exercise.title}
-              </h1>
+              <div className="min-w-0">
+                <h1 className="break-words text-[28px] font-bold leading-tight text-[#1E1E1E] sm:text-[34px]">
+                  {exercise.title}
+                </h1>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="inline-flex rounded-full bg-[#7875FB]/15 px-5 py-2 text-[15px] font-semibold text-[#7875FB]">
-                  {formatLabel(
-                    exercise.trackerType
-                  )}
-                </span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="inline-flex rounded-full bg-[#7875FB]/15 px-5 py-2 text-[15px] font-semibold text-[#7875FB]">
+                    {formatLabel(
+                      exercise.trackerType
+                    )}
+                  </span>
 
-                <span className="inline-flex rounded-full bg-[#F2EEFC] px-5 py-2 text-[15px] font-semibold text-[#592EBD]">
-                  {formatLabel(
-                    exercise.primaryMetric
-                  )}
-                </span>
+                  <span className="inline-flex rounded-full bg-[#F2EEFC] px-5 py-2 text-[15px] font-semibold text-[#592EBD]">
+                    {formatLabel(
+                      exercise.primaryMetric
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
+
+            <AudioInstructionsControl
+              isPlaying={isPlayingInstructions}
+              progress={audioProgress}
+              onClick={handleAudioInstructions}
+            />
           </div>
 
           <Card className="grid grid-cols-1 overflow-hidden rounded-2xl border-0 bg-white p-5 shadow-none lg:grid-cols-[1fr_260px]">
@@ -139,7 +301,7 @@ export function ExerciseDetailsView({
               <SummaryItem
                 icon={<Target />}
                 label="Target Repetitions"
-                value={`${exercise.defaultTargetReps} reps`}
+                value={`${cappedTargetReps} reps`}
               />
 
               <SummaryItem
@@ -375,6 +537,80 @@ export function ExerciseDetailsView({
   );
 }
 
+function AudioInstructionsControl({
+  isPlaying,
+  progress,
+  onClick,
+}: {
+  isPlaying: boolean;
+  progress: number;
+  onClick: () => void;
+}) {
+  const displayedProgress = Math.max(
+    0,
+    Math.min(100, progress)
+  );
+
+  return (
+    <div className="w-full max-w-[390px] shrink-0">
+      <button
+        type="button"
+        onClick={onClick}
+        className="group flex w-full items-center gap-3 rounded-full border border-[#7875FB] bg-white p-1.5 text-left shadow-sm transition hover:border-[#592EBD] hover:shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-[#592EBD]/25"
+        aria-pressed={isPlaying}
+      >
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#592EBD] text-white">
+          <Volume2 size={26} />
+        </span>
+
+        <span className="min-w-0 flex-1 px-1">
+          <span className="block text-[16px] font-semibold text-[#1E1E1E]">
+            {isPlaying
+              ? "Playing Instructions"
+              : "Play Audio Instructions"}
+          </span>
+
+          <span
+            className="mt-2 block h-2 overflow-hidden rounded-full bg-[#F1EEEC]"
+            aria-hidden="true"
+          >
+            <span
+              className="block h-full rounded-full bg-[#592EBD] transition-[width] duration-300 ease-out"
+              style={{
+                width: `${
+                  isPlaying || displayedProgress > 0
+                    ? displayedProgress
+                    : 0
+                }%`,
+              }}
+            />
+          </span>
+        </span>
+
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#F7F4F2] text-[#1E1E1E] transition group-hover:bg-[#EFEAFB]">
+          {isPlaying ? (
+            <Square
+              size={21}
+              fill="currentColor"
+            />
+          ) : (
+            <Play
+              size={24}
+              fill="currentColor"
+            />
+          )}
+        </span>
+      </button>
+
+      <p className="mt-2 text-[15px] text-[#777777]">
+        {isPlaying
+          ? `${displayedProgress}% of instructions read`
+          : "Listen to step-by-step guidance"}
+      </p>
+    </div>
+  );
+}
+
 function ExerciseAnimation({
   startImage,
   endImage,
@@ -501,6 +737,60 @@ function SummaryItem({
       </div>
     </div>
   );
+}
+
+function buildAudioInstructions({
+  exercise,
+  activities,
+  instruction,
+  cappedTargetReps,
+}: {
+  exercise: Exercise;
+  activities: ActivityItem[];
+  instruction: string;
+  cappedTargetReps: number;
+}): string {
+  const about =
+    exercise.description ??
+    exercise.shortDescription ??
+    "Information about this exercise is not available yet.";
+
+  const benefits =
+    exercise.benefits.length > 0
+      ? exercise.benefits.join(". ")
+      : "Benefits have not been added yet.";
+
+  const dailyActivities =
+    activities.length > 0
+      ? activities
+          .map((activity) => activity.title)
+          .join(", ")
+      : "Daily activity examples have not been added yet.";
+
+  const steps =
+    exercise.steps.length > 0
+      ? exercise.steps
+          .map(
+            (step) =>
+              `Step ${step.stepNumber}. ${step.title ? `${step.title}. ` : ""}${step.instruction}`
+          )
+          .join(". ")
+      : instruction;
+
+  return [
+    exercise.title,
+    "About this exercise.",
+    about,
+    "Benefits.",
+    benefits,
+    "Sit or stand where your upper body is visible.",
+    "What daily activities does this help with?",
+    dailyActivities,
+    "How to perform.",
+    steps,
+    `Complete ${cappedTargetReps} repetitions.`,
+    "You can watch the demo or start the exercise when you are ready.",
+  ].join(" ");
 }
 
 function formatLabel(
