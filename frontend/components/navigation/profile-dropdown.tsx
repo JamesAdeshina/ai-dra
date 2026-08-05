@@ -9,9 +9,10 @@ import Link from "next/link";
 import {
   ChevronRight,
   LogOut,
-  Settings,
   User,
   HelpCircle,
+  HeartHandshake,
+  Accessibility,
 } from "lucide-react";
 
 import { SignOutModal } from "./sign-out-modal";
@@ -97,12 +98,21 @@ export function ProfileDropdown({
           </Link>
 
           <Link
-            href="/settings?tab=personal"
+            href="/settings?tab=linked-carer"
             onClick={onClose}
             className="flex items-center gap-4"
           >
-            <Settings />
-            <span>Settings</span>
+            <HeartHandshake />
+            <span>Linked Carer</span>
+          </Link>
+
+          <Link
+            href="/settings?tab=accessibility"
+            onClick={onClose}
+            className="flex items-center gap-4"
+          >
+            <Accessibility />
+            <span>Accessibility</span>
           </Link>
 
           <Link

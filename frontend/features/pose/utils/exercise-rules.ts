@@ -54,7 +54,7 @@ export const exerciseRules: Record<string, ExerciseRule> = {
 
   "reach-grasp": {
     tracker: "hand",
-    targetReps: 8,
+    targetReps: 10,
     primaryMetric: "hand-closure",
 
     startThreshold: 0,
@@ -79,7 +79,7 @@ export const exerciseRules: Record<string, ExerciseRule> = {
 
   "lift-place": {
     tracker: "pose",
-    targetReps: 8,
+    targetReps: 10,
     primaryMetric: "wrist-height",
 
     startThreshold: 0.75,
@@ -118,7 +118,7 @@ export const exerciseRules: Record<string, ExerciseRule> = {
 
   "button-fastening": {
     tracker: "hand",
-    targetReps: 5,
+    targetReps: 10,
     primaryMetric: "pinch-zone",
 
     startThreshold: 0,

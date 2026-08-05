@@ -224,14 +224,36 @@ export async function getDashboardData(): Promise<DashboardData> {
       now
     );
 
+  const targetTouchExercise =
+    exercises.find(
+      (exercise) =>
+        exercise.slug === "target-touch"
+    ) ?? null;
+
   const suggestedExercise =
-    suggestExercise({
-      exercises,
-      sessions,
-      scores,
-      userId: user.id,
-      now,
-    });
+    targetTouchExercise
+      ? {
+          ...targetTouchExercise,
+          reason: "DAILY_ROTATION" as const,
+          reasonLabel:
+            "Suggested for today's workshop demo",
+          averageMovementScore: null,
+          sessionsCompleted:
+            sessions.filter(
+              (session) =>
+                session.exerciseSlug ===
+                  "target-touch" &&
+                session.status ===
+                  "COMPLETED"
+            ).length,
+        }
+      : suggestExercise({
+          exercises,
+          sessions,
+          scores,
+          userId: user.id,
+          now,
+        });
 
   const recentSession =
     sessions.find(

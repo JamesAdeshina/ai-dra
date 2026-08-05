@@ -1,6 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import {
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 
 import { AboutSettings } from "./about-settings";
 import { AccessibilitySettings } from "./accessibility-settings";
@@ -18,9 +27,70 @@ import {
 
 import { useCurrentProfile } from "@/features/profile/hooks/use-current-profile";
 
+const tabFromQuery = (
+  value: string | null
+): SettingsTab => {
+  switch (value) {
+    case "profile":
+    case "personal":
+      return "Personal Information";
+    case "password":
+      return "Change Password";
+    case "linked-carer":
+      return "Linked Carer";
+    case "accessibility":
+      return "Accessibility";
+    case "preferences":
+      return "Preferences";
+    case "support":
+      return "Help & Support";
+    case "about":
+      return "About";
+    default:
+      return "Personal Information";
+  }
+};
+
+const queryFromTab: Record<
+  SettingsTab,
+  string
+> = {
+  "Personal Information": "profile",
+  "Change Password": "password",
+  "Linked Carer": "linked-carer",
+  Accessibility: "accessibility",
+  Preferences: "preferences",
+  "Help & Support": "support",
+  About: "about",
+};
+
 export function SettingsView() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const tabParam = searchParams.get("tab");
+
   const [activeTab, setActiveTab] =
-    useState<SettingsTab>("Personal Information");
+    useState<SettingsTab>(() =>
+      tabFromQuery(tabParam)
+    );
+
+  useEffect(() => {
+    setActiveTab(tabFromQuery(tabParam));
+  }, [tabParam]);
+
+  const handleTabChange = useCallback(
+    (tab: SettingsTab) => {
+      setActiveTab(tab);
+
+      router.replace(
+        `${pathname}?tab=${queryFromTab[tab]}`,
+        { scroll: false }
+      );
+    },
+    [pathname, router]
+  );
 
   const {
     profile,
@@ -33,7 +103,7 @@ export function SettingsView() {
     <main className="grid grid-cols-1 gap-6 xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
       <SettingsSidebar
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
       />
 
       {activeTab === "Personal Information" && (
@@ -44,7 +114,7 @@ export function SettingsView() {
             error={error}
             onProfileUpdated={refreshProfile}
             onChangePassword={() =>
-              setActiveTab("Change Password")
+              handleTabChange("Change Password")
             }
           />
 

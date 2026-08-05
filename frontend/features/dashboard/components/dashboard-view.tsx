@@ -1,4 +1,3 @@
-import { PushNotificationPreview } from "./push-notification-preview";
 import { StreakCard } from "./streak-card";
 import { TodaysSessionCard } from "./todays-session-card";
 import { WeeklyProgressCard } from "./weekly-progress-card";
@@ -15,9 +14,6 @@ type DashboardViewProps = {
 export function DashboardView({
   dashboardData,
 }: DashboardViewProps) {
-  const previewNotification =
-    dashboardData.notifications[0] ?? null;
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr_1fr]">
@@ -44,12 +40,6 @@ export function DashboardView({
       <TodaysSessionCard
         exercise={
           dashboardData.suggestedExercise
-        }
-      />
-
-      <PushNotificationPreview
-        notification={
-          previewNotification
         }
       />
     </div>
